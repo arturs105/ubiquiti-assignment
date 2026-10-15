@@ -1,0 +1,19 @@
+import Foundation
+import Testing
+@testable import Ubiquiti_Assignment
+
+struct InMemoryFeedClientTests {
+    @Test func replaysTheScriptedResponse() async {
+        let response = FeedResponse.updated(data: Data("feed".utf8), validators: Validators(etag: #""v1""#))
+
+        let result = await InMemoryFeedClient(response: response).fetch(validators: .none).emissions()
+
+        #expect(result == .success([response]))
+    }
+
+    @Test func replaysTheScriptedFailure() async {
+        let result = await InMemoryFeedClient(error: .httpStatus(500)).fetch(validators: .none).emissions()
+
+        #expect(result == .failure(.httpStatus(500)))
+    }
+}
