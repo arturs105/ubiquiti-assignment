@@ -1,0 +1,28 @@
+# Ubiquiti Product Catalogue
+
+A small iOS app that lists Ubiquiti hardware products from the public UIDB feed, filters them by category and shows one product's details.
+
+## Language
+
+**Product**:
+One Ubiquiti hardware item as the UIDB feed describes it, identified by its UUID. The feed's JSON calls these "devices"; the app does not.
+_Avoid_: Device, item, entry
+
+**Feed**:
+The whole UIDB document: a version fingerprint plus the list of products.
+_Avoid_: Catalogue, database, UIDB (as a type name)
+
+**Line**:
+The product family a product belongs to, such as UniFi Protect or airMAX. Has an id and a display name. Categories are defined in terms of lines.
+_Avoid_: Family, series, category
+
+**Category**:
+One of the three filter tabs: All, Cameras, IoT. A category is a rule over lines, not a field in the feed.
+_Avoid_: Tab, filter, line
+
+**Device type**:
+A product's functional kind as the feed reports it (camera, switch, sensor, console…). A property of a product, never the noun for a product.
+_Avoid_: Kind, type
+
+**Placeholder product**:
+One of the two feed entries under the `unknown` line ("Unknown Device", "Unknown Console"). They decode like any product; hiding them is a display rule, not a decoding rule.
