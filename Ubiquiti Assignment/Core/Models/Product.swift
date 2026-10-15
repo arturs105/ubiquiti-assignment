@@ -31,6 +31,10 @@ nonisolated struct Product: Codable, Hashable, Identifiable, Sendable {
     /// Minimum controller version that can adopt the product, whichever of the `net` or `protect` keys is present.
     let minimumAdoptVersion: String?
     let complianceModelName: String?
+    /// Certified for indoor use only; absent means the feed makes no claim, not "outdoor".
+    let isIndoorOnly: Bool?
+    /// Wi-Fi generation as the feed spells it ("5e", "6e"); a string because the spelling is Ubiquiti's.
+    let wifiGeneration: String?
     let isARSupported: Bool?
 
     // MARK: - Codable
@@ -80,6 +84,8 @@ nonisolated struct Product: Codable, Hashable, Identifiable, Sendable {
 
     private enum ComplianceKeys: String, CodingKey {
         case modelName
+        case indoorOnly
+        case wifi
     }
 
     init(from decoder: any Decoder) throws {
@@ -116,6 +122,8 @@ nonisolated struct Product: Codable, Hashable, Identifiable, Sendable {
         minimumAdoptVersion = try minAdopt?.decodeIfPresent(String.self, forKey: .net)
             ?? minAdopt?.decodeIfPresent(String.self, forKey: .protect)
         complianceModelName = try compliance?.decodeIfPresent(String.self, forKey: .modelName)
+        isIndoorOnly = try compliance?.decodeIfPresent(Bool.self, forKey: .indoorOnly)
+        wifiGeneration = try compliance?.decodeIfPresent(String.self, forKey: .wifi)
         isARSupported = try container.decodeIfPresent(Bool.self, forKey: .isARSupported)
     }
 
@@ -152,9 +160,11 @@ nonisolated struct Product: Codable, Hashable, Identifiable, Sendable {
             var minAdopt = container.nestedContainer(keyedBy: MinAdoptVersionKeys.self, forKey: .minAdoptVersion)
             try minAdopt.encode(minimumAdoptVersion, forKey: .net)
         }
-        if let complianceModelName {
+        if complianceModelName != nil || isIndoorOnly != nil || wifiGeneration != nil {
             var compliance = container.nestedContainer(keyedBy: ComplianceKeys.self, forKey: .compliance)
-            try compliance.encode(complianceModelName, forKey: .modelName)
+            try compliance.encodeIfPresent(complianceModelName, forKey: .modelName)
+            try compliance.encodeIfPresent(isIndoorOnly, forKey: .indoorOnly)
+            try compliance.encodeIfPresent(wifiGeneration, forKey: .wifi)
         }
         try container.encodeIfPresent(isARSupported, forKey: .isARSupported)
     }

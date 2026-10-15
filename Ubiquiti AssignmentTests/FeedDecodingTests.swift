@@ -7,7 +7,7 @@ struct FeedDecodingTests {
         let feed = try decodeFixture()
 
         #expect(feed.version == "ff4e56c5856d96e3b801dbf379cf026b1099f786")
-        #expect(feed.products.count == 11)
+        #expect(feed.products.count == 12)
     }
 
     @Test func requiredFieldsAreFlattenedFromTheFeedNesting() throws {
@@ -49,6 +49,16 @@ struct FeedDecodingTests {
         #expect(try product(FixtureID.avFiber).isARSupported == true)
     }
 
+    @Test func indoorOnlyAndWiFiGenerationComeFromTheComplianceBlock() throws {
+        let accessPoint = try product(FixtureID.u6Enterprise)
+        let displayCast = try product(FixtureID.displayCast)
+
+        #expect(accessPoint.isIndoorOnly == true)
+        #expect(accessPoint.wifiGeneration == "6e")
+        #expect(displayCast.isIndoorOnly == nil)
+        #expect(displayCast.wifiGeneration == "5e")
+    }
+
     @Test func detailsAreNilWhenTheFeedHasOnlyRequiredKeys() throws {
         let antenna = try product(FixtureID.antenna)
 
@@ -59,6 +69,8 @@ struct FeedDecodingTests {
         #expect(antenna.minimumAdoptVersion == nil)
         #expect(antenna.complianceModelName == nil)
         #expect(antenna.isARSupported == nil)
+        #expect(antenna.isIndoorOnly == nil)
+        #expect(antenna.wifiGeneration == nil)
     }
 
     @Test func unknownAdoptabilityDecodesToNil() throws {
@@ -126,6 +138,8 @@ struct FeedDecodingTests {
         static let avFiber = UUID(uuidString: "e006afb6-1e29-4000-9c4d-311d0d11644b")!
         static let antenna = UUID(uuidString: "e9d2b791-482e-449c-b9f8-41b304b884fe")!
         static let unknownDevice = UUID(uuidString: "4a1e2102-3c54-48d6-b90f-535293d31cbe")!
+        static let displayCast = UUID(uuidString: "b29bcbf8-1e1f-4405-9bee-573837f40255")!
+        static let u6Enterprise = UUID(uuidString: "6b036438-7ceb-464b-97e7-d681054e41bb")!
     }
 
     private func product(_ id: UUID) throws -> Product {

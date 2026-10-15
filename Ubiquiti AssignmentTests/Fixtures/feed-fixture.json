@@ -1271,6 +1271,187 @@
         "nameLegacy": []
       },
       "videos": {}
+    },
+    {
+      "btle": {
+        "factoryDefault": "958d5091-8705-498c-b0d5-fc4136b18bcc",
+        "userConfigured": "3f3f9d29-a929-4bf0-8ef2-6391936a9ecd"
+      },
+      "compliance": {
+        "anatel": "11933-22-08356",
+        "fcc": "SWX-U6EP",
+        "ic": "6545A-U6EP",
+        "icEmi": "CAN ICES-003(B)/NMB-003(B)",
+        "indoorOnly": true,
+        "jrf": [
+          "201-230134"
+        ],
+        "modelName": "U6-Enterprise",
+        "ncc": "CCAH24LP0040T2",
+        "rcm": true,
+        "rfCmFcc": 20,
+        "rfCmIc": 20,
+        "text": {
+          "BR": [
+            "WIFI_6E"
+          ],
+          "CA": [
+            "IC",
+            "RF",
+            "WIFI_5",
+            "WIFI_6"
+          ],
+          "US": [
+            "FCC_B",
+            "RF",
+            "WIFI_6"
+          ]
+        },
+        "wifi": "6e"
+      },
+      "deviceType": "access-point",
+      "deviceTypes": [
+        "access-point"
+      ],
+      "fcc": "SWX-U6EP",
+      "guids": [
+        "3f3f9d29-a929-4bf0-8ef2-6391936a9ecd",
+        "958d5091-8705-498c-b0d5-fc4136b18bcc"
+      ],
+      "ic": "6545A-U6EP",
+      "icon": {
+        "id": "c429ec89-99a0-4892-ae8a-afcd5c805367",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "6b036438-7ceb-464b-97e7-d681054e41bb",
+      "images": {
+        "default": "7e7944d429b60b023e8cbbd002125b73",
+        "nopadding": "6e87412985c9ebfde23a1b193e1032fc",
+        "topology": "38a7861f0e5a0dd684f182bdd2384ed2"
+      },
+      "jrf": [
+        "201-230134"
+      ],
+      "line": {
+        "id": "unifi-network",
+        "name": "UniFi"
+      },
+      "minAdoptVersion": {
+        "net": "6.3.25"
+      },
+      "product": {
+        "abbrev": "U6 Enterprise",
+        "name": "Access Point U6 Enterprise"
+      },
+      "shortnames": [
+        "U6-Enterprise",
+        "U6ENT"
+      ],
+      "sku": "U6-Enterprise",
+      "sysid": "a654",
+      "sysids": [
+        "a654"
+      ],
+      "triplets": [
+        {
+          "k1": "U6ENT",
+          "k2": "U6-Enterprise"
+        },
+        {
+          "k1": "U6ENT",
+          "k3": "U6ENT"
+        }
+      ],
+      "unifi": {
+        "adoptability": "adoptable",
+        "network": {
+          "chipset": "f",
+          "deviceCapabilities": [
+            "ACCESS_POINT",
+            "HAS_CLIENTS",
+            "VPORT"
+          ],
+          "ethernetMaxSpeedMegabitsPerSecond": 2500,
+          "features": {
+            "atfDisabled": true,
+            "ax": true,
+            "bandsteer": true,
+            "gen": 2
+          },
+          "formFactor": [
+            "CEILING",
+            "WALL"
+          ],
+          "minimumFirmwareRequired": "5.55.12",
+          "model": "U6ENT",
+          "numberOfPorts": 1,
+          "radios": {
+            "6e": {
+              "gain": 6,
+              "maxPower": 26,
+              "maxSpeedMegabitsPerSecond": 5765
+            },
+            "na": {
+              "gain": 3,
+              "maxPower": 26,
+              "maxSpeedMegabitsPerSecond": 5765
+            },
+            "ng": {
+              "gain": 5,
+              "maxPower": 22,
+              "maxSpeedMegabitsPerSecond": 570
+            }
+          },
+          "systemIdHexadecimal": "a654",
+          "type": "uap"
+        }
+      },
+      "videos": {}
     }
   ],
   "version": "ff4e56c5856d96e3b801dbf379cf026b1099f786"
