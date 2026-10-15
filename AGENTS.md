@@ -29,3 +29,17 @@ docs/             assignment transcript, standards, decision log
 - Loading, empty and error states are graded. Each screen handles all three with a dedicated view, never a bare `ProgressView` or empty screen.
 - Commits: small, one concern each, present tense, gitmoji prefix as in existing history (`🏗️ XCode project scaffolding`). Commit only when asked.
 - Figma file is the UI reference. When a Figma link is in context, pull exact spacing, colours and type from it rather than approximating.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are GitHub Issues on `arturs105/ubiquiti-assignment`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `docs/adr/` at the repo root, created lazily. See `docs/agents/domain.md`.
