@@ -77,3 +77,11 @@ The models are `Codable` (coding standards), but `Product` flattens nested feed 
 ## 2026-10-15 Fixture products are whole live entries, not trimmed to modelled keys
 
 The fixture keeps each of its eleven products exactly as the live feed had them on 2026-10-15, including `sysids`, `triplets`, `compliance` and the rest the model ignores. Why: the decoder's tolerance of keys it does not model is part of what the fixture proves, and a copied entry cannot drift from the real shape the way a hand-trimmed one can. Cost: ~25 KB instead of ~5 KB, and a reader skimming the fixture sees more than the model uses. Malformed products are inline literals in the test file so the broken JSON sits beside its assertion.
+
+## 2026-10-15 Swift names over feed spellings on `Product`
+
+Flattened fields take the name a Swift reader expects, not the feed key: `abbrev` is `abbreviation`, `images.default` is `defaultImageID`, `fov` is `fieldOfView`, `power.baseConsumption` is `baseConsumptionWatts`. The feed spelling survives only in the private coding keys. Cost: a reader comparing the model with the raw JSON has to look at the decoder once; issue #1 wrote `abbrev` and the code deviates from that spelling knowingly.
+
+## 2026-10-15 Optional details are typed strictly
+
+An optional block that is present but has the wrong type (`protect.fov` as a string, `isARSupported` as a number) throws inside the product's decoder, so the whole product is dropped like any other structurally broken entry. Only `adoptability` is lenient within the product, because an unknown enum case is a plausible feed evolution rather than a broken record. Chosen over per-field `try?`, which would silently hide a feed type change behind a nil. Cost: a type change in a detail block removes products from the catalogue until the model catches up, visibly, in the Console log.
