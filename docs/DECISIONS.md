@@ -101,3 +101,7 @@ The live feed answers 304 to both `If-None-Match` and `If-Modified-Since` (check
 ## 2026-10-15 Networking tests land with #2, not #4
 
 The test target already exists, so `FeedClient` ships with `URLProtocol`-stubbed tests (success with validators captured, 304 → unchanged, 404 → `httpStatus`, transport failure → `network`, validators sent as headers). The `FeedClient` protocol also gets an in-memory fake for #3 and the view models. #4 keeps store and merge tests.
+
+## 2026-10-15 Networking tests: a `URLProtocol` stub, one URL per test, error codes not errors
+
+The client is tested through the public `fetch(validators:)` on a session whose `protocolClasses` is a stub that replays a scripted status, headers and body per URL and records the request it saw. Chosen over a `URLSession` protocol wrapper (the swift-testing-pro skill's suggestion): the stub exercises the real `dataTaskPublisher`, header handling and the production session configuration, and the client's initialiser already injects the session. Each test registers its script under a unique URL, so Swift Testing's parallel execution needs no serialisation. Equality on `URLError` is not asserted: `URLSession` adds its task to the error's `userInfo`, so tests compare `code`, which is what the display mapper will switch on. `Validators` is `Codable` now rather than in #3 because the store writes it beside the bytes and the type should not change shape once persisted. Cost: a ~60-line stub in the test target, and a stubbed `URLProtocol` cannot prove redirect following or TLS behaviour.
