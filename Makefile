@@ -1,8 +1,10 @@
 PROJECT   := Ubiquiti\ Assignment.xcodeproj
 SCHEME    := Ubiquiti Assignment
 DERIVED   := .build/DerivedData
-# First available iPhone simulator on this machine; tests need a concrete device, builds do not.
-SIM       ?= $(shell xcrun simctl list devices available | grep -m1 -o 'iPhone [^(]*' | sed 's/ *$$//')
+# An iPhone simulator on the newest installed iOS runtime (simctl lists runtimes oldest first, so take the last
+# iPhone); tests need a concrete device that meets the deployment target, builds do not. No parentheses in the
+# pattern: make 3.81 cannot parse an unbalanced "(" inside $(shell).
+SIM       ?= $(shell xcrun simctl list devices available | grep -o 'iPhone [A-Za-z0-9 ]*' | tail -1 | sed 's/ *$$//')
 XCB       := xcodebuild -project $(PROJECT) -scheme "$(SCHEME)" -derivedDataPath $(DERIVED)
 PRETTY    := 2>&1 | grep -E "error:|warning:|BUILD|TEST|Executed|failed" ; exit $${PIPESTATUS[0]}
 
