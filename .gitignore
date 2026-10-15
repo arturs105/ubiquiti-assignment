@@ -60,3 +60,12 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# macOS
+.DS_Store
+
+# Local agent settings
+.claude/settings.local.json
+
+# Assignment brief is transcribed in docs/ASSIGNMENT.md
+assignment.pdf
