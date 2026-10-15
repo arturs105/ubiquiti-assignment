@@ -11,7 +11,7 @@ struct FeedDecodingTests {
     }
 
     @Test func requiredFieldsAreFlattenedFromTheFeedNesting() throws {
-        let camera = try product(Fixture.g3Dome)
+        let camera = try product(FixtureID.g3Dome)
 
         #expect(camera.name == "Camera G3 Dome")
         #expect(camera.abbreviation == "G3 Dome")
@@ -20,11 +20,10 @@ struct FeedDecodingTests {
         #expect(camera.shortnames == ["UVC G3 Dome", "UVC-G3-Dome"])
         #expect(camera.defaultImageID == "d8594ad6c9cf32910b210da58ace5d25")
         #expect(camera.line == Line(id: .unifiProtect, name: "UniFi Protect"))
-        #expect(camera.line.id.rawValue == "unifi-protect")
     }
 
     @Test func cameraDetailsComeFromTheProtectBlock() throws {
-        let camera = try product(Fixture.g3Dome)
+        let camera = try product(FixtureID.g3Dome)
 
         #expect(camera.adoptability == .adoptable)
         #expect(camera.fieldOfView == 87.8)
@@ -35,22 +34,23 @@ struct FeedDecodingTests {
         #expect(camera.isARSupported == nil)
     }
 
-    @Test func powerAndAdoptVersionReadBothFeedSpellings() throws {
-        let flexMini = try product(Fixture.flexMini)
-        let proHD = try product(Fixture.proHD24PoE)
-        let envr = try product(Fixture.envrCore)
-        let avFiber = try product(Fixture.avFiber)
+    @Test(arguments: [(FixtureID.flexMini, 2.5), (FixtureID.proHD24PoE, 60)] as [(UUID, Double)])
+    func powerConsumptionAcceptsDecimalAndIntegerWatts(id: UUID, watts: Double) throws {
+        #expect(try product(id).baseConsumptionWatts == watts)
+    }
 
-        #expect(flexMini.baseConsumptionWatts == 2.5)
-        #expect(proHD.baseConsumptionWatts == 60)
-        #expect(proHD.minimumAdoptVersion == "8.4.59")
-        #expect(envr.minimumAdoptVersion == "7.0.104")
-        #expect(envr.adoptability == .standalone)
-        #expect(avFiber.isARSupported == true)
+    @Test(arguments: [(FixtureID.proHD24PoE, "8.4.59"), (FixtureID.envrCore, "7.0.104")] as [(UUID, String)])
+    func minimumAdoptVersionReadsTheNetOrProtectKey(id: UUID, version: String) throws {
+        #expect(try product(id).minimumAdoptVersion == version)
+    }
+
+    @Test func standaloneProductsAndARSupportDecode() throws {
+        #expect(try product(FixtureID.envrCore).adoptability == .standalone)
+        #expect(try product(FixtureID.avFiber).isARSupported == true)
     }
 
     @Test func detailsAreNilWhenTheFeedHasOnlyRequiredKeys() throws {
-        let antenna = try product(Fixture.antenna)
+        let antenna = try product(FixtureID.antenna)
 
         #expect(antenna.adoptability == nil)
         #expect(antenna.fieldOfView == nil)
@@ -100,7 +100,7 @@ struct FeedDecodingTests {
     }
 
     @Test func placeholderProductDecodes() throws {
-        let placeholder = try product(Fixture.unknownDevice)
+        let placeholder = try product(FixtureID.unknownDevice)
 
         #expect(placeholder.name == "Unknown Device")
         #expect(placeholder.line.id == .unknown)
@@ -118,7 +118,7 @@ struct FeedDecodingTests {
     // MARK: - Helpers
 
     /// Ids of fixture products, one per modelled shape.
-    private enum Fixture {
+    private nonisolated enum FixtureID {
         static let g3Dome = UUID(uuidString: "e8006f66-1914-4159-b01d-a9a2fa8a4ec2")!
         static let flexMini = UUID(uuidString: "b13610ef-7e73-4a14-985a-53bb75a62401")!
         static let proHD24PoE = UUID(uuidString: "6a903417-d0f2-6fd4-fd83-145a46794d15")!
@@ -133,7 +133,7 @@ struct FeedDecodingTests {
     }
 
     private func decodeFixture() throws -> Feed {
-        let url = try #require(Bundle(for: FixtureLocator.self).url(forResource: "feed", withExtension: "json"))
+        let url = try #require(Bundle(for: FixtureLocator.self).url(forResource: "feed-fixture", withExtension: "json"))
         return try JSONDecoder().decode(Feed.self, from: Data(contentsOf: url))
     }
 

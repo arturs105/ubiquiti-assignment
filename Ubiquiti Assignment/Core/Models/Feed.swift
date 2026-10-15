@@ -5,10 +5,13 @@ import OSLog
 ///
 /// Decoding is lenient: a structurally broken product is dropped and logged with its index, so one bad record never
 /// blanks the catalogue. See `docs/DECISIONS.md`, "Lenient feed decoding".
-nonisolated struct Feed: Codable, Hashable, Sendable {
+nonisolated struct Feed: Codable, Hashable, Identifiable, Sendable {
     /// Opaque fingerprint of the feed contents; caching compares it to detect a changed feed.
     let version: String
     let products: [Product]
+
+    /// Two feeds with the same fingerprint are the same document.
+    var id: String { version }
 
     // MARK: - Codable
 
@@ -36,19 +39,5 @@ nonisolated struct Feed: Codable, Hashable, Sendable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(version, forKey: .version)
         try container.encode(products, forKey: .products)
-    }
-}
-
-/// Decodes one array element without failing the array: a broken element becomes `.failed` instead of an error.
-private nonisolated enum Lenient<Wrapped: Decodable>: Decodable {
-    case decoded(Wrapped)
-    case failed(any Error)
-
-    init(from decoder: any Decoder) {
-        do {
-            self = try .decoded(Wrapped(from: decoder))
-        } catch {
-            self = .failed(error)
-        }
     }
 }
