@@ -6,7 +6,7 @@ Swift 6 language mode (strict concurrency, errors not warnings), approachable co
 
 MVVM, one `View` + one `ViewModel` per screen under `Features/<Screen>/`.
 
-- **ViewModel**: `final class`, `@MainActor`, `ObservableObject`. Exposes `@Published` state and intent methods (`load()`, `select(category:)`). Holds no SwiftUI types.
+- **ViewModel**: `final class`, `@MainActor`, `@Observable`. Exposes plain stored state and intent methods (`load()`, `select(category:)`). Holds no SwiftUI types. Not `ObservableObject`: Observation is the current API, and Combine lives in Core and in the pipelines the view model subscribes to, not in the state properties themselves.
 - **View**: renders state, forwards intents. No networking, no business logic, no `Task {}` that does more than call an intent.
 - **Core**: pure Swift. Services are protocols (`ProductRepository`, `ImageLoader`) with one production implementation and one in-memory fake for tests and previews. Inject through initialisers, never through singletons or `@Environment`. Every Core type and protocol is declared `nonisolated`: the target defaults to `MainActor`, and networking, decoding and caching must not be inferred as main-actor work that Combine then runs on background queues. Shared mutable state in Core (caches, stores) lives in an `actor` or behind a `Mutex`, never in a plain class. No `nonisolated(unsafe)`, no `@preconcurrency import`; if one is ever unavoidable, log it in `docs/DECISIONS.md`.
 
@@ -25,7 +25,9 @@ enum LoadState<Value> {
 ## Combine
 
 - Networking returns `AnyPublisher<Output, Error>` built on `URLSession.dataTaskPublisher`.
-- Derived state (filtered list from products × selected tab) is a `CombineLatest` pipeline assigned to a `@Published`, so filtering never calls a method by hand.
+- Inputs that drive derived state (selected tab, products) are fed into subjects (`CurrentValueSubject`) and derived state (the filtered list) is a `CombineLatest` pipeline that sinks into the view model's stored property, so filtering never calls a method by hand.
+- Cache-then-network is one pipeline: `Merge` of the cache-read publisher and the network publisher, so the list renders from disk and refreshes behind it.
+- The image loader shares in-flight publishers per URL (`share()` + a dictionary of pending publishers) so concurrent requests fetch once.
 - Every subscription stores in `private var cancellables = Set<AnyCancellable>()`. Receive on `DispatchQueue.main` before touching published state.
 - Reach for async/await only at the edges where Combine has no equivalent. The assignment grades Combine use.
 

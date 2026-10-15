@@ -2,26 +2,28 @@
 
 Append-only. Each entry: date, decision, why, what it costs. The README tradeoffs section is distilled from here at submission time.
 
-## 2026-10-15 Deployment target lowered from 27.0 to 26.0
-
-Xcode's template set iOS/macOS 27.0. This machine runs macOS 26.5 with iOS 26.5 simulators, and a reviewer is unlikely to have a newer setup. 26.0 keeps current APIs without excluding reviewers.
-
-## 2026-10-15 No third-party libraries
-
-The assignment asks to justify every library. `URLSession` + Combine cover networking, `URLCache` + a JSON file cover caching, `AsyncImage` or a small Combine image loader covers images. Fewer dependencies is a stronger signal than a familiar package. Cost: a hand-rolled image cache instead of Kingfisher/Nuke.
-
 ## 2026-10-15 Category mapping (OPEN)
 
 The PDF promises a `line` mapping but does not include one. Proposed: **Cameras** = `line.id == "unifi-protect"`; **IoT** = `unifi-connect`, `unifi-access`, `unifi-led`, `unifi-talk`, `mfi`; **All** = everything. Confirm against the Figma file and the assignment email before implementing.
 
-## 2026-10-15 MVVM with Combine, no `@Observable`
+## 2026-10-15 Caching: store the raw JSON on disk, not SwiftData
 
-`@Observable` would be the modern default, but Combine is a stated requirement and reviewers need to see it used for state. `ObservableObject` + `@Published` + Combine pipelines makes that visible without being contrived.
+Two options were compared. **A:** decode the feed into SwiftData `@Model` objects, populate the store on first launch, serve later launches from the store and upsert from a background fetch. **B:** keep the `Codable` structs as the only model layer, write the raw JSON to disk with a fingerprint next to it, decode the cached file on launch, fetch in the background and replace file and UI only when the fingerprint differs.
 
-## 2026-10-15 Build tooling: Makefile plus one shell script for running on simulators
+Chosen: **B**.
 
-`make` stays the single entry point. `build` and `test` are plain `xcodebuild` calls. `run` delegates to `scripts/run.sh`, because an interactive simulator picker and an ssh hop are not expressible in Make: the script builds for the generic simulator destination on the current machine, optionally rsyncs the `.app` to another Mac (`RUN_HOST=user@host`), then lets you pick one or more simulators with arrow keys, or skips the picker with `SIM=<name or UDID>`. This supports developing on a headless build host while watching the app on a laptop. Cost: ~120 lines of bash, a Python one-liner for parsing `simctl` JSON, and a dependency on Homebrew rsync 3 when running remotely.
+Why:
 
-## 2026-10-15 Swift 6 language mode
+- The spec asks for "caching (in-memory or disk)" and grades Combine, states and tradeoffs, not persistence depth. One ~700-device blob decodes in milliseconds; a full re-decode on change is not a performance concern.
+- One model layer. SwiftData needs a `Codable` DTO plus `@Model` classes plus mapping for nested optional structures (`unifi`, `uisp`, `power`, `compliance`), then a diff-and-delete pass so removed devices do not linger.
+- Swift 6 strict concurrency. `@Model` objects are non-`Sendable` references, so crossing from a `ModelActor` to a `@MainActor` view model means passing identifiers and refetching, or projecting to value structs anyway. Value-type models plus a small `actor` store fit without friction.
+- Combine stays visible. SwiftData's reactive surface is `@Query` in views, which bypasses the view model. With B, the pipeline is the cache design: cached publisher merged with network publisher, deduplicated on fingerprint.
+- Offline launch works from the file alone, so the error state becomes "cached data plus a stale indicator" rather than an empty screen.
 
-The scaffold was generated in Swift 5 mode with approachable concurrency and `MainActor` default isolation already on, so the only real delta is strict concurrency checking as errors. Switching now, with two placeholder files, costs one build setting; switching later would be a noisy "fix concurrency errors" commit. It also makes the compiler enforce what the standards already promise (`@MainActor` view models, `Sendable` models). Cost: Core must be explicitly `nonisolated` and shared caches need an `actor` or lock. Combine's operators are not concurrency-annotated, so strict checking guards the boundaries of a pipeline, not the inside: the compiler cannot prove a `receive(on: DispatchQueue.main)` precedes a `sink` that touches published state. That stays a standards rule, not a compiler guarantee.
+Fingerprint: compare the feed's top-level `version` string first; fall back to a content hash only if versions match but bytes differ. Try conditional requests (`If-None-Match` / `If-Modified-Since`) before downloading; if the server honours them, an unchanged feed costs one 304.
+
+Costs: whole-file replacement instead of row-level upserts, so the UI receives a full array swap (fine with `id`-keyed `ForEach` at this size). Filtering stays in memory rather than in predicates. The file lifecycle (atomic temp-file-and-rename write, corrupt-file recovery, schema change between app versions) is ours to handle and test. A reviewer looking for persistence-framework experience will not see it.
+
+## 2026-10-15 `@Observable` view models; Combine for data flow
+
+View models use `@Observable`, not `ObservableObject` + `@Published`. On an iOS 26 target `ObservableObject` is the legacy API and invalidates the whole view on any change. The assignment lists Combine as a bare bullet in a stack list (Swift, SwiftUI, Combine), which reads as "Apple's reactive stack, not RxSwift" rather than "publish view state through Combine". Combine therefore owns the data flow where it earns its place: `dataTaskPublisher` + `decode` + typed errors, the cache-then-network `Merge` described in the caching entry, an image loader that shares in-flight publishers per URL, and a `CombineLatest` filtering pipeline fed by subjects that sinks into view state. Cost: filter inputs exist as both a stored property and a subject, and a reviewer who expected `@Published` state has to read Core to find the Combine. The README tradeoffs section states this reading explicitly.
