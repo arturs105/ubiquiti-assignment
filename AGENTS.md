@@ -27,7 +27,7 @@ docs/             assignment transcript, standards, decision log
 - Combine is a stated requirement. View models are `@Observable`; Combine runs the data flow visibly: networking, cache-then-network merge, image loading, and the filtering pipeline that feeds view state. Never async/await alone where a publisher fits.
 - Loading, empty and error states are graded. Each screen handles all three with a dedicated view, never a bare `ProgressView` or empty screen.
 - Commits: small, one concern each, present tense, gitmoji prefix as in existing history (`🏗️ XCode project scaffolding`). Commit only when asked.
-- Before writing or reviewing SwiftUI, invoke the `swiftui-pro` skill when it is installed; before writing tests, invoke `swift-testing-pro`. Where either skill disagrees with `docs/CODING_STANDARDS.md` or `docs/DECISIONS.md`, the repo docs win.
+- Before writing or reviewing SwiftUI, invoke the `swiftui-pro:swiftui-pro` skill when it is installed; before writing tests, invoke `swift-testing-pro:swift-testing-pro`. Where either skill disagrees with `docs/CODING_STANDARDS.md` or `docs/DECISIONS.md`, the repo docs win.
 - Figma file is the UI reference. When a Figma link is in context, pull exact spacing, colours and type from it rather than approximating.
 
 ## Agent skills
