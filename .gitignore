@@ -69,3 +69,7 @@ fastlane/test_output
 
 # Assignment brief is transcribed in docs/ASSIGNMENT.md
 assignment.pdf
+
+# xcode-build-server bridge for sourcekit-lsp (make lsp; machine-specific paths)
+buildServer.json
+.compile
