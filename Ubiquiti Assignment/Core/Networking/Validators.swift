@@ -17,7 +17,7 @@ nonisolated struct Validators: Codable, Hashable, Sendable {
     }
 
     /// No validators: the request is unconditional and a 304 would be a server error.
-    static let none = Validators()
+    static let empty = Validators()
 
     /// Whether a request carrying these validators is conditional.
     var isConditional: Bool { etag != nil || lastModified != nil }

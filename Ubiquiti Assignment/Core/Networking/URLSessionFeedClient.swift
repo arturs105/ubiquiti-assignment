@@ -17,7 +17,9 @@ nonisolated struct URLSessionFeedClient: FeedClient {
     func fetch(validators: Validators) -> AnyPublisher<FeedResponse, NetworkError> {
         Deferred { [url, session] in
             let request = Self.request(for: url, validators: validators)
-            Logger.networking.info("GET \(url) \(validators.isConditional ? "conditional" : "unconditional")")
+            Logger.networking.info("""
+            GET \(url, privacy: .public) \(validators.isConditional ? "conditional" : "unconditional", privacy: .public)
+            """)
             return session.dataTaskPublisher(for: request)
                 .mapError(NetworkError.network)
                 .flatMap { data, response in
@@ -68,7 +70,8 @@ nonisolated struct URLSessionFeedClient: FeedClient {
 
 extension URLSessionFeedClient {
     nonisolated enum Constants {
-        /// The public UIDB feed. The only endpoint the app talks to for product data.
+        /// The public UIDB feed. The only endpoint the app talks to for product data. The force unwrap on a
+        /// compile-time literal is the one accepted exception to the standard; see `docs/DECISIONS.md`.
         static let feedURL = URL(string: "https://static.ui.com/fingerprint/ui/public.json")!
 
         static let ifNoneMatch = "If-None-Match"
@@ -78,17 +81,4 @@ extension URLSessionFeedClient {
         static let ok = 200
         static let notModified = 304
     }
-}
-
-extension URLSession {
-    /// A session for the feed only: no cache, so the feed's 24-hour `max-age` can never hide a changed feed from
-    /// the conditional request, and no waiting for connectivity, so an offline launch fails fast and falls back to
-    /// the cached feed. Images use a separate, cached session.
-    nonisolated static let feed: URLSession = {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.urlCache = nil
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        configuration.waitsForConnectivity = false
-        return URLSession(configuration: configuration)
-    }()
 }

@@ -3,7 +3,8 @@ import Foundation
 
 extension Publisher {
     /// Every value the publisher emits before completing, or the failure that ended it. Tests assert on this so a
-    /// publisher that emits twice, or never, is caught as well as one with the wrong value.
+    /// publisher that emits twice is caught as well as one with the wrong value. A publisher that never completes
+    /// hangs here; suites using it carry a time limit.
     func emissions() async -> Result<[Output], Failure> {
         do {
             var collected: [Output] = []

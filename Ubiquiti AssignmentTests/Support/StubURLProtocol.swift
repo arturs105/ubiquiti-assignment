@@ -1,5 +1,6 @@
 import Foundation
 import Synchronization
+@testable import Ubiquiti_Assignment
 
 /// Replays a scripted answer for each URL and records the request it saw, so `URLSessionFeedClient` is tested
 /// without the live server. Scripts are keyed by URL and every test uses its own URL, so tests run in parallel.
@@ -14,11 +15,9 @@ nonisolated final class StubURLProtocol: URLProtocol {
     private static let scripts = Mutex<[URL: Script]>([:])
     private static let requests = Mutex<[URL: URLRequest]>([:])
 
-    /// A session that routes every request through the stub, configured as the production session is.
+    /// The production feed configuration with every request routed through the stub.
     static func session() -> URLSession {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.urlCache = nil
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        let configuration = URLSessionConfiguration.feed()
         configuration.protocolClasses = [StubURLProtocol.self]
         return URLSession(configuration: configuration)
     }
