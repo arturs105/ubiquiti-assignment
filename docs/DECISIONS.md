@@ -85,3 +85,7 @@ Flattened fields take the name a Swift reader expects, not the feed key: `abbrev
 ## 2026-10-15 Optional details are typed strictly
 
 An optional block that is present but has the wrong type (`protect.fov` as a string, `isARSupported` as a number) throws inside the product's decoder, so the whole product is dropped like any other structurally broken entry. Only `adoptability` is lenient within the product, because an unknown enum case is a plausible feed evolution rather than a broken record. Chosen over per-field `try?`, which would silently hide a feed type change behind a nil. Cost: a type change in a detail block removes products from the catalogue until the model catches up, visibly, in the Console log.
+
+## 2026-10-15 Two more details: indoor-only and Wi-Fi generation
+
+Added `compliance.indoorOnly` (20 live products) and `compliance.wifi` (47, values `5e` and `6e`) to `Product` as `isIndoorOnly` and `wifiGeneration`. Why: the details screen is graded on a sensible selection of attributes, and these two are the only dropped fields a buyer reads at a glance; the rest of `compliance` is certification ids, `uisp` is operator tooling, `unifi.network` has no fixed schema, and `sysids`, `triplets`, `guids`, `icon`, `videos` (setup-wizard video asset ids) and the top-level `fcc`, `ic`, `jrf`, `jpa` regulatory ids are internal. `wifiGeneration` stays a string: the feed's spelling is Ubiquiti's own and a screen only displays it. Cost: the fixture grows by one product (an indoor-only Wi-Fi 6E access point), and the model now carries nine optional details.
