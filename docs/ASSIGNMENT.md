@@ -2,7 +2,7 @@
 
 ## Context
 
-You are an iOS developer at Ubiquiti. Build a small mobile app that gives an overview of Ubiquiti products. A Figma design file (provided by email) is the UI reference.
+You are an iOS developer at Ubiquiti. Build a small mobile app that gives an overview of Ubiquiti products. A Figma design file is the UI reference.
 
 ## Requirements
 

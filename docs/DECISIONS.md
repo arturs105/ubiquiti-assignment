@@ -2,9 +2,23 @@
 
 Append-only. Each entry: date, decision, why, what it costs. The README tradeoffs section is distilled from here at submission time.
 
-## 2026-10-15 Category mapping (OPEN)
+## 2026-10-15 Category mapping: tabs filter on `line.id`
 
-The PDF promises a `line` mapping but does not include one. Proposed: **Cameras** = `line.id == "unifi-protect"`; **IoT** = `unifi-connect`, `unifi-access`, `unifi-led`, `unifi-talk`, `mfi`; **All** = everything. Confirm against the Figma file and the assignment email before implementing.
+The PDF says `line` is the filter field and promises a mapping it never gives. The Figma file shows the tab bar (All, Cameras, IoT) with only **All** selected; its sample list mixes Protect cameras (G6 Pro Bullet, G6 Entry Pro) with a Protect sensor (USL Environmental), and a second frame shows a filter menu whose options are product lines (UniFi, UniFi LTE, UniFi Protect, UniFi Access). So the design confirms the filter dimension is the line, but defines no Cameras/IoT membership.
+
+Chosen, by `line.id`:
+
+- **All**: every product.
+- **Cameras**: `unifi-protect`.
+- **IoT**: `unifi-connect`, `unifi-access`, `unifi-led`, `unifi-talk`, `mfi`.
+
+Everything else (network, airmax, edgemax, uisp, amplifi, …) appears only under All.
+
+Why: the spec names the mechanism, so a reviewer grading against it will look for a line mapping, and the Figma sample list already shows a Protect sensor alongside Protect cameras. Against the live feed (698 products on 2026-10-15) Cameras holds 125 products, of which 80 have `deviceType == "camera"` and the rest are NVRs, sensors, chimes, a door lock and other Protect accessories; IoT holds 82.
+
+Considered and rejected: **Cameras = `deviceType == "camera"`**. It makes the tab literally cameras (80 products, all in `unifi-protect`) but silently switches the filter field away from the one the spec names, and splits the Protect ecosystem across tabs. Switching later is a one-line change in the category rules, so this is recorded rather than built.
+
+Costs: the Cameras tab shows some non-camera Protect products. IoT is a judgment call (phones under `unifi-talk` and legacy `mfi` power are arguable) and is stated as such in the README. The mapping is a hard-coded list of line ids; a new line in the feed lands under All until the list is updated.
 
 ## 2026-10-15 Caching: store the raw JSON on disk, not SwiftData
 
@@ -27,3 +41,31 @@ Costs: whole-file replacement instead of row-level upserts, so the UI receives a
 ## 2026-10-15 `@Observable` view models; Combine for data flow
 
 View models use `@Observable`, not `ObservableObject` + `@Published`. On an iOS 26 target `ObservableObject` is the legacy API and invalidates the whole view on any change. The assignment lists Combine as a bare bullet in a stack list (Swift, SwiftUI, Combine), which reads as "Apple's reactive stack, not RxSwift" rather than "publish view state through Combine". Combine therefore owns the data flow where it earns its place: `dataTaskPublisher` + `decode` + typed errors, the cache-then-network `Merge` described in the caching entry, an image loader that shares in-flight publishers per URL, and a `CombineLatest` filtering pipeline fed by subjects that sinks into view state. Cost: filter inputs exist as both a stored property and a subject, and a reviewer who expected `@Published` state has to read Core to find the Combine. The README tradeoffs section states this reading explicitly.
+
+## 2026-10-15 Model naming: `Product`, decoded from the feed's `devices` array
+
+The feed and issue #1 say "device"; the assignment PDF, the Figma and the coding standards say "product". One model layer (see the caching entry) means one name. Chosen: `Product`, with `deviceType` kept as a field name. Cost: a `CodingKeys` mapping from `devices` to `products` on `Feed`, and a reader who grew up on the feed has to translate once. Glossary in `CONTEXT.md`.
+
+## 2026-10-15 Model depth: curated fields, not full fidelity
+
+The feed has 25 top-level keys and `unifi.network` alone has around 35 optional sub-keys with no fixed schema. Chosen: model only what a screen renders. List and tabs: `id`, `line`, `product.name`, `product.abbrev`, `sku`, `deviceType`, `shortnames`, `images.default`. Details bonus: `unifi.adoptability`, `unifi.protect.fov`, `unifi.protect.suggestedDistance`, `power.baseConsumption`, `minAdoptVersion`, `compliance.modelName`, `isARSupported`. Dropped: `sysids`, `sysid`, `triplets`, `guids`, `videos`, `btle`, `uisp`, `icon`, the rest of `compliance` and `unifi.network`, and `deviceTypes`, which is always a one-element copy of `deviceType`. Cost: adding a detail later means touching the model and its fixture; nothing in the app can show a field the model did not keep.
+
+## 2026-10-15 Line ids and device types stay strings, wrapped
+
+`line.id` becomes a `Line.ID` wrapper struct with named constants for the lines the category rules use. Unknown ids decode without failure. `deviceType` stays a plain `String` until a screen needs it typed. Cost: no exhaustive switch over lines; the category mapping (issue #5) must cover "everything else" explicitly.
+
+## 2026-10-15 Lenient feed decoding: drop and log, never fail the feed
+
+A structurally malformed product (missing `id`, `product` not an object…) is dropped by a private `Lenient<T>` wrapper and `Feed` compact-maps the survivors. Each drop is logged through `os.Logger` with its index; the skipped count is observable in tests. Chosen over silent dropping (hides data bugs) and over a public count on `Feed` (API nothing renders). Placeholder products under line `unknown` are structurally valid and are decoded; hiding them is for the list screen.
+
+## 2026-10-15 Image URL builder moves to the image-loading issue (#9)
+
+Issue #1 first scoped `Product.imageURL(size:)` into the model. Deferred: the size values, the display scale and the loader are one decision, and the builder has no consumer until #9. When it lands it goes in `Product+ImageURL.swift`, takes a size enum whose raw value is the pixel width, returns a non-optional `URL` from `URLComponents`, and lowercases the UUID (see the `Product.ID` entry). Cost: issue #1 ships a model with no way to display an image; #9 owns that gap.
+
+## 2026-10-15 Decoding is proven by a trimmed fixture, not the full feed
+
+The live feed is ~795 KB and changes; it does not belong in the repo. Issue #1 adds the test target with a trimmed fixture plus one deliberately malformed product so the lenient path is tested. Issue #4 extends the target. The full live feed is run through the decoder once locally and the result recorded in the PR.
+
+## 2026-10-15 `Product.ID` is Foundation's `UUID`; `Line.ID` stays a string wrapper
+
+All 698 feed ids are canonical lowercase UUIDs, so `Product.ID == UUID` costs nothing and gives a `Hashable` navigation route for free. A product whose id is not a UUID is malformed and is dropped by the lenient decoder. Constraint found while checking: the image CDN returns 403 for an uppercase id, and `UUID.uuidString` is uppercase, so the image URL builder must lowercase it. `Line.ID` cannot be a UUID (values like `unifi-protect`) and keeps the wrapper from the earlier entry.
