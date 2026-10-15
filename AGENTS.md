@@ -25,7 +25,6 @@ docs/             assignment transcript, standards, decision log
 - Before writing Swift, read `docs/CODING_STANDARDS.md` and follow it. Same once a review or refactor is asked for.
 - Every assumption, tradeoff or library choice goes into `docs/DECISIONS.md` the moment it is made. The README's tradeoffs section is generated from that log at the end.
 - Combine is a stated requirement. View models are `@Observable`; Combine runs the data flow visibly: networking, cache-then-network merge, image loading, and the filtering pipeline that feeds view state. Never async/await alone where a publisher fits.
-- Third-party dependencies: none unless the decision log records why Foundation cannot do it.
 - Loading, empty and error states are graded. Each screen handles all three with a dedicated view, never a bare `ProgressView` or empty screen.
 - Commits: small, one concern each, present tense, gitmoji prefix as in existing history (`🏗️ XCode project scaffolding`). Commit only when asked.
 - Before writing or reviewing SwiftUI, invoke the `swiftui-pro` skill when it is installed; before writing tests, invoke `swift-testing-pro`. Where either skill disagrees with `docs/CODING_STANDARDS.md` or `docs/DECISIONS.md`, the repo docs win.
