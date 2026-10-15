@@ -69,3 +69,11 @@ The live feed is ~795 KB and changes; it does not belong in the repo. Issue #1 a
 ## 2026-10-15 `Product.ID` is Foundation's `UUID`; `Line.ID` stays a string wrapper
 
 All 698 feed ids are canonical lowercase UUIDs, so `Product.ID == UUID` costs nothing and gives a `Hashable` navigation route for free. A product whose id is not a UUID is malformed and is dropped by the lenient decoder. Constraint found while checking: the image CDN returns 403 for an uppercase id, and `UUID.uuidString` is uppercase, so the image URL builder must lowercase it. `Line.ID` cannot be a UUID (values like `unifi-protect`) and keeps the wrapper from the earlier entry.
+
+## 2026-10-15 `Product` encodes back into the feed's shape
+
+The models are `Codable` (coding standards), but `Product` flattens nested feed keys with a hand-written decoder, so a synthesised encoder would write flat keys that the decoder cannot read back. Chosen: a hand-written `encode(to:)` that mirrors the feed's nesting, verified by an encode-decode round-trip test over the fixture. Cost: about thirty lines of mirror code, and `minimumAdoptVersion` always encodes under `minAdoptVersion.net` because the model does not remember which of `net` or `protect` it came from. Nothing in the app encodes products today (the cache stores raw feed bytes), so this is correctness insurance, not a feature.
+
+## 2026-10-15 Fixture products are whole live entries, not trimmed to modelled keys
+
+The fixture keeps each of its eleven products exactly as the live feed had them on 2026-10-15, including `sysids`, `triplets`, `compliance` and the rest the model ignores. Why: the decoder's tolerance of keys it does not model is part of what the fixture proves, and a copied entry cannot drift from the real shape the way a hand-trimmed one can. Cost: ~25 KB instead of ~5 KB, and a reader skimming the fixture sees more than the model uses. Malformed products are inline literals in the test file so the broken JSON sits beside its assertion.
