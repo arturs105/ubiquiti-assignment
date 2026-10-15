@@ -1,0 +1,1277 @@
+{
+  "devices": [
+    {
+      "compliance": {
+        "fcc": " ",
+        "ic": " ",
+        "icEmi": "CAN ICES-003(A)/NMB-003(A)",
+        "modelName": "UVC-G3-DOME",
+        "rcm": true,
+        "text": {
+          "CA": [
+            "IC"
+          ],
+          "US": [
+            "FCC_A"
+          ]
+        }
+      },
+      "deviceType": "camera",
+      "deviceTypes": [
+        "camera"
+      ],
+      "fcc": "Compliant",
+      "guids": [],
+      "ic": "Compliant",
+      "icon": {
+        "id": "fee1fa20-77ae-4af5-ae24-b3c9afbd0000",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "e8006f66-1914-4159-b01d-a9a2fa8a4ec2",
+      "images": {
+        "default": "d8594ad6c9cf32910b210da58ace5d25",
+        "nopadding": "b5fd4a541f4c6705dfcee6eaddb62a53",
+        "topology": "f332b99bb57c40ace2c13365d72a6e9a"
+      },
+      "line": {
+        "id": "unifi-protect",
+        "name": "UniFi Protect"
+      },
+      "product": {
+        "abbrev": "G3 Dome",
+        "name": "Camera G3 Dome"
+      },
+      "shortnames": [
+        "UVC G3 Dome",
+        "UVC-G3-Dome"
+      ],
+      "sku": "UVC-G3-Dome",
+      "sysids": [],
+      "triplets": [
+        {
+          "k1": "UVC G3 Dome"
+        }
+      ],
+      "unifi": {
+        "adoptability": "adoptable",
+        "protect": {
+          "fov": 87.8,
+          "suggestedDistance": 5
+        }
+      },
+      "videos": {}
+    },
+    {
+      "compliance": {
+        "anatel": "14501-20-08356",
+        "icEmi": "CAN ICES-003(B)/NMB-003(B)",
+        "modelName": "USW-Flex-Mini",
+        "rcm": true,
+        "rfCmFcc": 20,
+        "rfCmIc": 20,
+        "text": {
+          "CA": [
+            "IC"
+          ],
+          "US": [
+            "FCC_B"
+          ]
+        }
+      },
+      "deviceType": "switch",
+      "deviceTypes": [
+        "switch"
+      ],
+      "fcc": "Compliant",
+      "guids": [],
+      "ic": "Compliant",
+      "icon": {
+        "id": "7a060fbb-8a8b-471c-9f57-da477ff3e04e",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "b13610ef-7e73-4a14-985a-53bb75a62401",
+      "images": {
+        "default": "e3fbf220c145f4301929576039d52d19",
+        "nopadding": "4608b98cfbc13adfb538490b117db81a",
+        "topology": "96c7cd1cb0ba8f00200d7a771136d05f"
+      },
+      "line": {
+        "id": "unifi-network",
+        "name": "UniFi"
+      },
+      "power": {
+        "baseConsumption": 2.5
+      },
+      "product": {
+        "abbrev": "USW Flex Mini",
+        "name": "Switch Flex Mini"
+      },
+      "shortnames": [
+        "USMINI",
+        "USW-Flex-Mini",
+        "USW-Mini"
+      ],
+      "sku": "USW-Flex-Mini",
+      "sysid": "ed30",
+      "sysids": [
+        "ed30"
+      ],
+      "triplets": [
+        {
+          "k1": "USMINI",
+          "k3": "USMINI"
+        }
+      ],
+      "unifi": {
+        "adoptability": "adoptable",
+        "network": {
+          "chipset": "n",
+          "deviceCapabilities": [
+            "SWITCH",
+            "MCU_BASED",
+            "HAS_CLIENTS"
+          ],
+          "ethernetMaxSpeedMegabitsPerSecond": 1000,
+          "formFactor": [
+            "DESKTOP"
+          ],
+          "minimumFirmwareRequired": "1.2.1",
+          "model": "USMINI",
+          "numberOfPorts": 5,
+          "ports": {
+            "standard": 5
+          },
+          "primaryPortGroupCount": 5,
+          "radios": {},
+          "systemIdHexadecimal": "ed30",
+          "type": "usw"
+        }
+      },
+      "videos": {}
+    },
+    {
+      "compliance": {
+        "anatel": "03853-25-08356",
+        "icEmi": "CAN ICES-003(A)/NMB-003(A)",
+        "modelName": "USW-Pro-HD-24-PoE",
+        "rcm": true,
+        "rfCmFcc": 20,
+        "rfCmIc": 20,
+        "text": {
+          "CA": [
+            "IC"
+          ],
+          "US": [
+            "FCC_A"
+          ]
+        }
+      },
+      "deviceType": "switch",
+      "deviceTypes": [
+        "switch"
+      ],
+      "guids": [
+        "b1b19d17-462d-e284-de73-2671591e4015"
+      ],
+      "icon": {
+        "id": "1d4221e3-3341-64f4-e543-74bb89b6f744",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "6a903417-d0f2-6fd4-fd83-145a46794d15",
+      "images": {
+        "default": "cec26a79685308285a75f9ae627f6a94",
+        "nopadding": "9face0cec0c8f0459bc4bba5c5be11bc",
+        "rack": "f26ebafec3195ea8b2acccd2f3420690",
+        "topology": "ce880e29b049efcaba1c4688ff6ab847"
+      },
+      "line": {
+        "id": "unifi-network",
+        "name": "UniFi"
+      },
+      "minAdoptVersion": {
+        "net": "8.4.59"
+      },
+      "power": {
+        "baseConsumption": 60
+      },
+      "product": {
+        "abbrev": "USW Pro HD 24 PoE",
+        "name": "Switch Pro HD 24 PoE"
+      },
+      "shortnames": [
+        "USPH24P"
+      ],
+      "sku": "USW-Pro-HD-24-PoE",
+      "sysid": "ed72",
+      "sysids": [
+        "ed72"
+      ],
+      "triplets": [],
+      "unifi": {
+        "adoptability": "adoptable",
+        "network": {
+          "chipset": "l",
+          "deviceCapabilities": [
+            "SWITCH",
+            "HAS_CLIENTS"
+          ],
+          "diagram": [
+            "__ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ __ 25 27",
+            "01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 __ 26 28"
+          ],
+          "ethernetMaxSpeedMegabitsPerSecond": 10000,
+          "features": {
+            "poe": true
+          },
+          "formFactor": [
+            "RACK_1U"
+          ],
+          "minimumFirmwareRequired": "4.0.6",
+          "model": "USWED72",
+          "numberOfPorts": 28,
+          "ports": {
+            "plus": [
+              25,
+              26,
+              27,
+              28
+            ],
+            "standard": 24
+          },
+          "radios": {},
+          "systemIdHexadecimal": "ed72",
+          "type": "usw"
+        }
+      },
+      "videos": {}
+    },
+    {
+      "btle": {
+        "factoryDefault": "ce733c87-f530-4a1b-9fff-ff9499af0e44",
+        "userConfigured": "a75c7478-c204-4613-9936-1c3fd4c05f92"
+      },
+      "compliance": {
+        "anatel": "06206-26-08356",
+        "fcc": "SWX-ENVRC",
+        "ic": "6545A-ENVRC",
+        "icEmi": "CAN ICES-003(B)/NMB-003(B)",
+        "modelName": "ENVR-Core",
+        "rcm": true,
+        "rfCmFcc": 20,
+        "rfCmIc": 20,
+        "text": {
+          "CA": [
+            "IC"
+          ],
+          "US": [
+            "FCC_B",
+            "RF"
+          ]
+        }
+      },
+      "deviceType": "console",
+      "deviceTypes": [
+        "console"
+      ],
+      "guids": [
+        "2533db6c-be76-490d-8fb3-02dbfb37b212",
+        "ce733c87-f530-4a1b-9fff-ff9499af0e44",
+        "a75c7478-c204-4613-9936-1c3fd4c05f92"
+      ],
+      "icon": {
+        "id": "79ad903e-d68b-4af7-9e94-9e49a32aa735",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "85a45409-3154-4bd2-931c-49bf4da0117c",
+      "images": {
+        "default": "993dd2f27fb0e2f86b64bafa756f7d58",
+        "nopadding": "a9f8c1f8592c0994a0f1c97dc5bbdb56",
+        "rack": "ccb86b28b55b9697a2ad281053a916b3",
+        "topology": "a7132d6af03210012290b4c97da75541"
+      },
+      "line": {
+        "id": "unifi-protect",
+        "name": "UniFi Protect"
+      },
+      "minAdoptVersion": {
+        "protect": "7.0.104"
+      },
+      "product": {
+        "abbrev": "ENVR Core",
+        "name": "Enterprise Network Video Recorder Core"
+      },
+      "shortnames": [
+        "ENVR-Core",
+        "ENVRCORE"
+      ],
+      "sku": "ENVR-Core",
+      "sysid": "da28",
+      "sysids": [
+        "da28"
+      ],
+      "triplets": [],
+      "unifi": {
+        "adoptability": "standalone",
+        "network": {
+          "bleServices": [
+            {
+              "configured": "a75c7478-c204-4613-9936-1c3fd4c05f92",
+              "default": "ce733c87-f530-4a1b-9fff-ff9499af0e44",
+              "features": {
+                "ucore": true
+              }
+            }
+          ],
+          "deviceCapabilities": [
+            "PROTECT_APPLICATION",
+            "STORAGE"
+          ],
+          "diagram": [
+            "01 02 03 04 05"
+          ],
+          "model": "ENVR-Core",
+          "ports": {
+            "rj45": [
+              1
+            ],
+            "sfp": [
+              4,
+              5
+            ],
+            "sfp28": [
+              2,
+              3
+            ]
+          },
+          "radios": {},
+          "type": "unvr"
+        }
+      },
+      "videos": {}
+    },
+    {
+      "btle": {
+        "factoryDefault": "4c96be8e-9a26-40a7-8dbb-00f59314e7de",
+        "userConfigured": "add7492c-e71c-420f-9f02-881f068e955f"
+      },
+      "compliance": {
+        "fcc": "SWX-CKEP",
+        "ic": "6545A-CKEP",
+        "icEmi": "CAN ICES-003(A)/NMB-003(A)",
+        "modelName": "CK-Enterprise",
+        "ncc": "CCAH24LP4490T1",
+        "rcm": true,
+        "rfCmFcc": 20,
+        "rfCmIc": 20,
+        "text": {
+          "CA": [
+            "IC",
+            "RF"
+          ],
+          "US": [
+            "FCC_A",
+            "RF"
+          ]
+        }
+      },
+      "deviceType": "network-server-host",
+      "deviceTypes": [
+        "network-server-host"
+      ],
+      "guids": [
+        "26b79f30-37f1-445b-9d17-688c5c531448",
+        "4c96be8e-9a26-40a7-8dbb-00f59314e7de",
+        "add7492c-e71c-420f-9f02-881f068e955f"
+      ],
+      "icon": {
+        "id": "4476a062-ea83-433a-8bec-21e994b3d3b7",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "8dc148ad-2825-450c-af1b-b10888bc1260",
+      "images": {
+        "default": "35becbc9f54e9276c6c7b069bd8aa419",
+        "nopadding": "b84439f413b3ed0b84073444f7b7479a",
+        "topology": "0d12f8ebb73a9a7fcc38cf6654a0868a"
+      },
+      "line": {
+        "id": "unifi-network",
+        "name": "UniFi"
+      },
+      "minAdoptVersion": {
+        "net": "7.3.83"
+      },
+      "product": {
+        "abbrev": "UCK Enterprise",
+        "name": "CloudKey Enterprise"
+      },
+      "shortnames": [
+        "CK-Enterprise",
+        "UCKENT"
+      ],
+      "sku": "CK-Enterprise",
+      "sysid": "e990",
+      "sysids": [
+        "e990"
+      ],
+      "triplets": [
+        {
+          "k1": "UCKENT"
+        }
+      ],
+      "unifi": {
+        "adoptability": "standalone",
+        "network": {
+          "bleServices": [
+            {
+              "configured": "add7492c-e71c-420f-9f02-881f068e955f",
+              "default": "4c96be8e-9a26-40a7-8dbb-00f59314e7de",
+              "features": {
+                "ucore": true
+              }
+            }
+          ],
+          "deviceCapabilities": [
+            "CLOUD_KEY",
+            "NETWORK_APPLICATION"
+          ],
+          "formFactor": [
+            "RACK_1U"
+          ],
+          "model": "UCKENT",
+          "radios": {},
+          "type": "uck"
+        }
+      },
+      "videos": {
+        "mobile-intro": "15855b906b88a3cc077c1f84b5bbfadd"
+      }
+    },
+    {
+      "deviceType": "test",
+      "deviceTypes": [
+        "test"
+      ],
+      "guids": [],
+      "icon": {
+        "id": "d865ae0a-a29f-4873-a1e5-1aa88c6ad11b",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "4a1e2102-3c54-48d6-b90f-535293d31cbe",
+      "images": {
+        "default": "d9ab7814004a6dd9741efba0e9fd0f3d",
+        "nopadding": "70ca2088edf0121527d62f1e7de1b1fa",
+        "topology": "d9ab7814004a6dd9741efba0e9fd0f3d"
+      },
+      "line": {
+        "id": "unknown",
+        "name": "Unknown"
+      },
+      "product": {
+        "abbrev": "Unknown Device",
+        "name": "Unknown Device"
+      },
+      "shortnames": [
+        "UNKNOWN"
+      ],
+      "sku": "UNKNOWN",
+      "sysids": [],
+      "triplets": [],
+      "videos": {}
+    },
+    {
+      "compliance": {
+        "anatel": "05213-26-08356",
+        "icEmi": "CAN ICES-003(A)/NMB-003(A)",
+        "modelName": "EAV-Fiber",
+        "rfCmFcc": 20,
+        "rfCmIc": 20
+      },
+      "deviceType": "switch",
+      "deviceTypes": [
+        "switch"
+      ],
+      "guids": [
+        "f8b846ef-64ad-425f-9e99-d9a052881b0d"
+      ],
+      "icon": {
+        "id": "4f80325e-51fe-435a-b925-5ab1868514b8",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "e006afb6-1e29-4000-9c4d-311d0d11644b",
+      "images": {
+        "default": "034f69c26dd12712d1fb88e595473384",
+        "nopadding": "0567aee51ab32037aea72e878b8e43bc",
+        "rack": "6a388cee465eeaaa8b9799348eaa5055",
+        "topology": "8a84344ef781eb0ac5b198fdf7ba583a"
+      },
+      "isARSupported": true,
+      "line": {
+        "id": "unifi-network",
+        "name": "UniFi"
+      },
+      "product": {
+        "abbrev": "EAV Fiber",
+        "name": "Switch Enterprise AV Fiber"
+      },
+      "shortnames": [
+        "EAVAGG",
+        "EAV-Fiber"
+      ],
+      "sku": "EAV-Fiber",
+      "sysid": "f002",
+      "sysids": [
+        "f002"
+      ],
+      "triplets": [],
+      "unifi": {
+        "adoptability": "adoptable",
+        "network": {
+          "chipset": "p",
+          "deviceCapabilities": [
+            "SWITCH",
+            "HAS_CLIENTS"
+          ],
+          "diagram": [
+            "01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 __ 21 22 __ 23"
+          ],
+          "ethernetMaxSpeedMegabitsPerSecond": 100000,
+          "features": {
+            "poe": false
+          },
+          "formFactor": [
+            "RACK_1U"
+          ],
+          "minimumFirmwareRequired": "4.0.6",
+          "model": "USWF002",
+          "numberOfPorts": 23,
+          "ports": {
+            "plus": "1-20",
+            "sfp28": "21-22"
+          },
+          "radios": {},
+          "systemIdHexadecimal": "f002",
+          "type": "usw"
+        }
+      },
+      "videos": {}
+    },
+    {
+      "deviceType": "radio",
+      "deviceTypes": [
+        "radio"
+      ],
+      "guids": [],
+      "icon": {
+        "id": "7145b7f3-2cf0-4a83-aeb0-9fe1d346d21a",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "e9d2b791-482e-449c-b9f8-41b304b884fe",
+      "images": {
+        "default": "176aee350498999d2b2f61f9d978fcf5",
+        "nopadding": "383561d7d5059e3ea277e57332a1cab5",
+        "topology": "176aee350498999d2b2f61f9d978fcf5"
+      },
+      "line": {
+        "id": "airfiber",
+        "name": "AirFiber"
+      },
+      "product": {
+        "abbrev": "AF 11G35",
+        "name": "airFiber X 11G35 Antenna"
+      },
+      "shortnames": [
+        "AF-11G35",
+        "AirFiber X 11G35 Antenna"
+      ],
+      "sku": "AF-11G35",
+      "sysids": [],
+      "triplets": [],
+      "videos": {}
+    },
+    {
+      "compliance": {
+        "fcc": "SWX-UCCAST",
+        "ic": "6545A-UCCAST",
+        "icEmi": "CAN ICES-003(B)/NMB-003(B)",
+        "jrf": [
+          "201-220474"
+        ],
+        "modelName": "UC-Cast",
+        "ncc": "CCAH23LP1610T1",
+        "rcm": true,
+        "rfCmFcc": 20,
+        "rfCmIc": 20,
+        "text": {
+          "CA": [
+            "IC",
+            "RF",
+            "WIFI_5"
+          ],
+          "US": [
+            "FCC_B",
+            "RF"
+          ]
+        },
+        "wifi": "5e"
+      },
+      "deviceType": "audio",
+      "deviceTypes": [
+        "audio"
+      ],
+      "fcc": "SWX-UCCAST",
+      "guids": [
+        "616c0abc-0131-46a6-b143-1ee9ba585184"
+      ],
+      "ic": "6545A-UCCAST",
+      "icon": {
+        "id": "94a02e5f-2f5c-4431-be60-08664e62578b",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "b29bcbf8-1e1f-4405-9bee-573837f40255",
+      "images": {
+        "default": "0412c32876888899dcb52176ec58d5a5",
+        "nopadding": "19f9b64abbb9abd06b12bbee0d2e7d3e",
+        "topology": "50dfc6873ac08551fda1fd1f57bb0ae0"
+      },
+      "jrf": [
+        "201-220474"
+      ],
+      "line": {
+        "id": "unifi-connect",
+        "name": "UniFi Connect"
+      },
+      "product": {
+        "abbrev": "UC Cast",
+        "name": "Display Cast"
+      },
+      "shortnames": [
+        "UC-Cast"
+      ],
+      "sku": "UC-Cast",
+      "sysid": "ef90",
+      "sysids": [
+        "ef90"
+      ],
+      "triplets": [
+        {
+          "k1": "UC-Cast"
+        }
+      ],
+      "unifi": {
+        "adoptability": "adoptable"
+      },
+      "videos": {}
+    },
+    {
+      "compliance": {
+        "icEmi": "CAN ICES-003(A)/NMB-003(A)",
+        "modelName": "EAH-8",
+        "rcm": true,
+        "rfCmFcc": 20,
+        "rfCmIc": 20,
+        "text": {
+          "CA": [
+            "IC"
+          ],
+          "US": [
+            "FCC_A"
+          ]
+        }
+      },
+      "deviceType": "access-hub",
+      "deviceTypes": [
+        "access-hub"
+      ],
+      "guids": [
+        "63ff0828-8a02-4625-85bb-b6cae8c89018"
+      ],
+      "icon": {
+        "id": "7d86ca12-86cd-4259-bcfc-2e931a16518b",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "25c5e4f8-c354-4c2b-8866-ab6e87b40cc4",
+      "images": {
+        "default": "36b00339ae42e9c79f114afbae0857ff",
+        "nopadding": "c02c33803066d34b9516e5f5994b0c88",
+        "topology": "ee6ddb2c0766c16cf6e4017e7e4e2f9c"
+      },
+      "line": {
+        "id": "unifi-access",
+        "name": "UniFi Access"
+      },
+      "product": {
+        "abbrev": "EAH 8",
+        "name": "Enterprise Access Hub"
+      },
+      "shortnames": [
+        "EAH-8",
+        "UA-Enterprise",
+        "UA-Hub-Enterprise"
+      ],
+      "sku": "EAH-8",
+      "sysid": "ec55",
+      "sysids": [
+        "ec55"
+      ],
+      "triplets": [
+        {
+          "k1": "UA-Enterprise",
+          "k3": "UAH-Ent"
+        }
+      ],
+      "unifi": {
+        "adoptability": "adoptable"
+      },
+      "videos": {}
+    },
+    {
+      "compliance": {
+        "icEmi": "CAN ICES-003(B)/NMB-003(B)",
+        "modelName": "ETH-SP-G2",
+        "rcm": true
+      },
+      "deviceType": "tool",
+      "deviceTypes": [
+        "tool"
+      ],
+      "guids": [],
+      "icon": {
+        "id": "57212013-7160-46f4-8152-b397aa971350",
+        "resolutions": [
+          [
+            25,
+            25
+          ],
+          [
+            32,
+            32
+          ],
+          [
+            51,
+            51
+          ],
+          [
+            64,
+            64
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            128,
+            128
+          ],
+          [
+            129,
+            129
+          ],
+          [
+            256,
+            256
+          ],
+          [
+            257,
+            257
+          ],
+          [
+            512,
+            512
+          ],
+          [
+            1000,
+            1000
+          ]
+        ]
+      },
+      "id": "d6f47320-c650-4b27-8c61-531d67fe58aa",
+      "images": {
+        "default": "e01c9e99728e8f839929220c6475af57",
+        "nopadding": "d28feafff3ebd2ed0f2951985fc1dc02",
+        "topology": "4f635a8dad1658f8886168c20cf43f47"
+      },
+      "line": {
+        "id": "airmax",
+        "name": "airMAX"
+      },
+      "product": {
+        "abbrev": "ETH SP G2",
+        "name": "Ethernet Surge Protector"
+      },
+      "shortnames": [
+        "ETH-SP-G2",
+        "UBI"
+      ],
+      "sku": "ETH-SP-G2",
+      "sysids": [],
+      "triplets": [
+        {
+          "k1": "UBI"
+        }
+      ],
+      "uisp": {
+        "bleServices": {},
+        "firmware": {
+          "board": [
+            "UBI"
+          ],
+          "platform": "airmax"
+        },
+        "line": "airmax_installer",
+        "nameLegacy": []
+      },
+      "videos": {}
+    }
+  ],
+  "version": "ff4e56c5856d96e3b801dbf379cf026b1099f786"
+}
