@@ -21,6 +21,7 @@ build: ## compile for the simulator (any machine, no simulator needed)
 	@$(XCB) -configuration Debug -destination 'generic/platform=iOS Simulator' build $(PRETTY)
 
 test: ## run unit tests on a local simulator (SIM="iPhone 16" to override)
+	@test -n "$(SIM)" || { echo "no iPhone simulator found: install one in Xcode or pass SIM=name"; exit 1; }
 	@$(XCB) -destination 'platform=iOS Simulator,name=$(SIM)' test $(PRETTY)
 
 run: ## build here, pick simulator(s) and launch; RUN_HOST=user@mac launches there, SIM=name skips the picker
