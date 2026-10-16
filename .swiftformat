@@ -11,4 +11,4 @@
 --extensionacl on-declarations
 --header strip
 --enable isEmpty, wrapEnumCases, blankLinesBetweenImports
---disable andOperator, wrapPropertyBodies, swiftTestingTestCaseNames
+--disable andOperator, wrapPropertyBodies, wrapFunctionBodies, swiftTestingTestCaseNames
