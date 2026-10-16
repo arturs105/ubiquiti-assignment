@@ -54,13 +54,13 @@ nonisolated struct URLSessionFeedClient: FeedClient {
         }
         Logger.networking.info("HTTP \(http.statusCode), \(data.count) bytes")
         switch http.statusCode {
-        case Constants.ok:
+        case HTTPStatus.ok:
             let validators = Validators(
                 etag: http.value(forHTTPHeaderField: Constants.etag),
                 lastModified: http.value(forHTTPHeaderField: Constants.lastModified),
             )
             return .success(.updated(data: data, validators: validators))
-        case Constants.notModified where conditional:
+        case HTTPStatus.notModified where conditional:
             // Only a conditional request can legitimately be answered 304; an unconditional one must send the feed.
             return .success(.unchanged)
         default:
@@ -80,7 +80,5 @@ extension URLSessionFeedClient {
         static let ifModifiedSince = "If-Modified-Since"
         static let etag = "ETag"
         static let lastModified = "Last-Modified"
-        static let ok = 200
-        static let notModified = 304
     }
 }
