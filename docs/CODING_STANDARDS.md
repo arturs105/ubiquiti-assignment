@@ -24,7 +24,7 @@ enum LoadState<Value> {
 
 ## Combine
 
-- Networking returns `AnyPublisher<Output, Error>` built on `URLSession.dataTaskPublisher`.
+- Networking returns `AnyPublisher<Output, NetworkError>` built on `URLSession.dataTaskPublisher`; the failure type is the service's typed error, never `Error`.
 - Inputs that drive derived state (selected tab, products) are fed into subjects (`CurrentValueSubject`) and derived state (the filtered list) is a `CombineLatest` pipeline that sinks into the view model's stored property, so filtering never calls a method by hand.
 - Cache-then-network is one pipeline: `Merge` of the cache-read publisher and the network publisher, so the list renders from disk and refreshes behind it.
 - The image loader shares in-flight publishers per URL (`share()` + a dictionary of pending publishers) so concurrent requests fetch once.
