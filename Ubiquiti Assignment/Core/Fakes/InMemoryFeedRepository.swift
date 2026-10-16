@@ -3,6 +3,8 @@ import Foundation
 
 /// A `FeedRepository` that replays scripted snapshots or one failure, for view model tests and previews.
 nonisolated struct InMemoryFeedRepository: FeedRepository {
+    private let result: Result<[FeedSnapshot], FeedError>
+
     init(result: Result<[FeedSnapshot], FeedError>) {
         self.result = result
     }
@@ -27,6 +29,4 @@ nonisolated struct InMemoryFeedRepository: FeedRepository {
             Fail(error: error).eraseToAnyPublisher()
         }
     }
-
-    private let result: Result<[FeedSnapshot], FeedError>
 }

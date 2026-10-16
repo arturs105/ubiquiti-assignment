@@ -144,7 +144,7 @@ struct CachedFeedRepositoryTests {
 
         #expect(client.receivedValidators == [.empty])
         #expect(result == .failure(.network(.httpStatus(500))))
-        #expect(FileManager.default.fileExists(atPath: directory.appending(path: "validators.json").path) == false)
+        #expect(FileManager.default.fileExists(atPath: validatorsFileURL.path) == false)
     }
 
     @Test(arguments: [Data("not json".utf8), Data(#"{"version": 1}"#.utf8), Data(#"{"devices": []}"#.utf8)])
@@ -156,15 +156,15 @@ struct CachedFeedRepositoryTests {
 
         #expect(client.receivedValidators == [.empty])
         #expect(result == .failure(.network(.httpStatus(500))))
-        #expect(FileManager.default.fileExists(atPath: directory.appending(path: "feed.json").path) == false)
-        #expect(FileManager.default.fileExists(atPath: directory.appending(path: "validators.json").path) == false)
+        #expect(FileManager.default.fileExists(atPath: feedFileURL.path) == false)
+        #expect(FileManager.default.fileExists(atPath: validatorsFileURL.path) == false)
     }
 
     @Test func anUnreadableFeedFileIsNoCacheAndBothFilesAreDeleted() async throws {
         // A directory where the file should be: exists, cannot be read as data.
         try seed(bytes: nil, validators: validators1)
         try FileManager.default.createDirectory(
-            at: directory.appending(path: "feed.json"),
+            at: feedFileURL,
             withIntermediateDirectories: false
         )
         let client = RecordingFeedClient(result: .failure(.httpStatus(500)))
@@ -173,8 +173,8 @@ struct CachedFeedRepositoryTests {
 
         #expect(client.receivedValidators == [.empty])
         #expect(result == .failure(.network(.httpStatus(500))))
-        #expect(FileManager.default.fileExists(atPath: directory.appending(path: "feed.json").path) == false)
-        #expect(FileManager.default.fileExists(atPath: directory.appending(path: "validators.json").path) == false)
+        #expect(FileManager.default.fileExists(atPath: feedFileURL.path) == false)
+        #expect(FileManager.default.fileExists(atPath: validatorsFileURL.path) == false)
     }
 
     @Test func aCachedFeedWithNoProductsIsAValidEmptyCache() async throws {
@@ -212,6 +212,15 @@ struct CachedFeedRepositoryTests {
         #expect(client.receivedValidators == [.empty, validators1])
     }
 
+    @Test func unchangedWithoutACacheIsAStatusErrorNotASnapshot() async {
+        // The real client never answers unchanged to an unconditional request; the repository treats it the same way.
+        let repository = repository(.success(.unchanged))
+
+        let result = await repository.feed().emissions()
+
+        #expect(result == .failure(.network(.httpStatus(304))))
+    }
+
     /// A directory of its own per test, so Swift Testing's parallel execution never shares a cache.
     private let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
 
@@ -228,12 +237,20 @@ struct CachedFeedRepositoryTests {
 
     // MARK: - Helpers
 
+    private var feedFileURL: URL {
+        directory.appending(path: CachedFeedRepository.Constants.feedFile)
+    }
+
+    private var validatorsFileURL: URL {
+        directory.appending(path: CachedFeedRepository.Constants.validatorsFile)
+    }
+
     /// Puts a cached pair on disk as the repository would have left it.
     private func seed(bytes: Data?, validators: Validators?) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try bytes?.write(to: directory.appending(path: "feed.json"))
+        try bytes?.write(to: feedFileURL)
         guard let validators else { return }
-        try JSONEncoder().encode(validators).write(to: directory.appending(path: "validators.json"))
+        try JSONEncoder().encode(validators).write(to: validatorsFileURL)
     }
 
     private func repository(_ result: Result<FeedResponse, NetworkError>) -> CachedFeedRepository {
@@ -249,10 +266,10 @@ struct CachedFeedRepositoryTests {
     }
 
     private func cachedBytes() throws -> Data {
-        try Data(contentsOf: directory.appending(path: "feed.json"))
+        try Data(contentsOf: feedFileURL)
     }
 
     private func cachedValidators() throws -> Validators {
-        try JSONDecoder().decode(Validators.self, from: Data(contentsOf: directory.appending(path: "validators.json")))
+        try JSONDecoder().decode(Validators.self, from: Data(contentsOf: validatorsFileURL))
     }
 }

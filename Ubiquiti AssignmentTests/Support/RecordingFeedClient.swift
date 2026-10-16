@@ -5,7 +5,11 @@ import Synchronization
 
 /// An `InMemoryFeedClient` that also remembers the validators each fetch was asked with, so tests can prove what
 /// the repository sends after loading, or failing to load, its cache.
-final class RecordingFeedClient: FeedClient, Sendable {
+final nonisolated class RecordingFeedClient: FeedClient, Sendable {
+    private let client: InMemoryFeedClient
+    private let received = Mutex<[Validators]>([])
+
+    /// Replays `result` on every fetch, like `InMemoryFeedClient(result:)`.
     init(result: Result<FeedResponse, NetworkError>) {
         client = InMemoryFeedClient(result: result)
     }
@@ -21,7 +25,4 @@ final class RecordingFeedClient: FeedClient, Sendable {
         received.withLock { $0.append(validators) }
         return client.fetch(validators: validators)
     }
-
-    private let client: InMemoryFeedClient
-    private let received = Mutex<[Validators]>([])
 }

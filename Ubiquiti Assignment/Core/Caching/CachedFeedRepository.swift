@@ -11,9 +11,13 @@ import Synchronization
 /// `subscribe(on:)` keeps the disk read off the subscriber's thread. See `docs/DECISIONS.md`, "Mutex, not actor".
 final nonisolated class CachedFeedRepository: FeedRepository, Sendable {
     private let client: any FeedClient
+    /// Where the two cache files live. Internal so the disk extension can reach it.
     let directory: URL
     private let memory = Mutex<Memory>(.unread)
 
+    /// - Parameters:
+    ///   - client: the network seam the refresh goes through.
+    ///   - directory: the cache directory; tests pass a temporary one.
     init(client: any FeedClient, directory: URL = Constants.defaultDirectory) {
         self.client = client
         self.directory = directory
@@ -30,14 +34,20 @@ final nonisolated class CachedFeedRepository: FeedRepository, Sendable {
             guard let cached else { return refresh.eraseToAnyPublisher() }
             // A cached feed makes a failed refresh a stale snapshot instead of an error.
             return refresh
-                .catch { error in
-                    Just(FeedSnapshot(feed: cached.feed, freshness: .stale(error))).setFailureType(to: FeedError.self)
-                }
+                .catch { error in Self.emit(cached.feed, as: .stale(error)) }
                 .prepend(FeedSnapshot(feed: cached.feed, freshness: .cached))
                 .eraseToAnyPublisher()
         }
         .subscribe(on: Constants.queue)
         .eraseToAnyPublisher()
+    }
+
+    /// One snapshot, then completion: the shape every branch of the pipeline ends in.
+    private static func emit(
+        _ feed: Feed,
+        as freshness: FeedSnapshot.Freshness
+    ) -> AnyPublisher<FeedSnapshot, FeedError> {
+        Just(FeedSnapshot(feed: feed, freshness: freshness)).setFailureType(to: FeedError.self).eraseToAnyPublisher()
     }
 
     // MARK: - Pipeline steps
@@ -61,13 +71,13 @@ final nonisolated class CachedFeedRepository: FeedRepository, Sendable {
         switch response {
         case .unchanged:
             guard let held = memory.withLock(\.cachedFeed) else {
-                // The client only reports unchanged to a conditional request, and validators come from a cached feed.
+                // Unreachable through the real client, which answers unchanged only to a conditional request, and
+                // validators only exist beside a cached feed. A 304 with nothing to confirm is the same status error
+                // the client itself reports for one (see `docs/DECISIONS.md`).
                 return Fail(error: .network(.httpStatus(HTTPStatus.notModified))).eraseToAnyPublisher()
             }
             Logger.caching.info("Feed unchanged, version \(held.feed.version, privacy: .public)")
-            return Just(FeedSnapshot(feed: held.feed, freshness: .current))
-                .setFailureType(to: FeedError.self)
-                .eraseToAnyPublisher()
+            return Self.emit(held.feed, as: .current)
         case let .updated(data, validators):
             let downloaded: Feed
             do {
@@ -77,8 +87,7 @@ final nonisolated class CachedFeedRepository: FeedRepository, Sendable {
                 return Fail(error: .decoding(String(describing: error))).eraseToAnyPublisher()
             }
             let shown = remember(downloaded, validators: validators)
-            return Just(FeedSnapshot(feed: shown, freshness: .current))
-                .setFailureType(to: FeedError.self)
+            return Self.emit(shown, as: .current)
                 .append(Deferred { [self] in
                     write(Download(data: data, validators: validators))
                     return Empty<FeedSnapshot, FeedError>()
@@ -131,6 +140,7 @@ extension CachedFeedRepository {
         }
     }
 
+    /// File names and locations shared by the pipeline, the disk extension and the tests.
     nonisolated enum Constants {
         /// `Library/Caches/Feed/`: purgeable by the system, which the recovery rules tolerate.
         static let defaultDirectory = URL.cachesDirectory.appending(path: "Feed")
