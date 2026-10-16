@@ -33,7 +33,7 @@ enum LoadState<Value> {
 
 ## Caching
 
-The feed repository owns its cache: raw feed bytes and validators as two files in the Caches directory, with the in-memory copy in front, inside one `actor`. No separate store protocol (see `docs/DECISIONS.md`). Images cache through `URLCache` configured once at app start. Cache reads happen before the network call so the list renders from cache instantly and refreshes behind it.
+The feed repository owns its cache: raw feed bytes and validators as two files in the Caches directory, with the in-memory copy in front, behind a `Mutex` in one `Sendable` class. No separate store protocol, and no actor: Combine's `Future` cannot be fed from a `Task` under Swift 6 without unchecked code (see `docs/DECISIONS.md`). Images cache through `URLCache` configured once at app start. Cache reads happen before the network call so the list renders from cache instantly and refreshes behind it.
 
 ## Errors
 
