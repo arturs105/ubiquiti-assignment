@@ -9,6 +9,14 @@ struct URLSessionFeedClientTests {
     private let lastModified = "Wed, 15 Oct 2026 08:00:00 GMT"
     private var validators: Validators { Validators(etag: etag, lastModified: lastModified) }
 
+    @Test func defaultFeedURLIsThePublicUIDBFeed() {
+        // Evaluates the force-unwrapped literal, so a typo that made it unparseable fails here, not at launch.
+        let url = URLSessionFeedClient.Constants.feedURL
+
+        #expect(url.absoluteString == "https://static.ui.com/fingerprint/ui/public.json")
+        #expect(url.host() == "static.ui.com")
+    }
+
     @Test func fullResponseCarriesTheExactBytesAndBothValidators() async {
         let url = StubURLProtocol.script(.http(
             status: 200,

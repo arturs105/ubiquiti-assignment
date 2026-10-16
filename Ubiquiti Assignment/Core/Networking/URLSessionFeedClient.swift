@@ -71,7 +71,8 @@ nonisolated struct URLSessionFeedClient: FeedClient {
 extension URLSessionFeedClient {
     nonisolated enum Constants {
         /// The public UIDB feed. The only endpoint the app talks to for product data. The force unwrap on a
-        /// compile-time literal is the one accepted exception to the standard; see `docs/DECISIONS.md`.
+        /// compile-time literal is the one accepted exception to the standard; a test evaluates it on every run.
+        /// See `docs/DECISIONS.md`.
         static let feedURL = URL(string: "https://static.ui.com/fingerprint/ui/public.json")!
 
         static let ifNoneMatch = "If-None-Match"
