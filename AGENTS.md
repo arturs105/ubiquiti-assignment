@@ -15,6 +15,7 @@ Ubiquiti Assignment/
   App/            entry point, root navigation
   Features/       one folder per screen: View + ViewModel (+ subviews)
   Core/           Models, Networking, Caching, ImageLoading. No SwiftUI imports.
+    Fakes/        in-memory fakes of the Core protocols, for tests and previews
   UI/             shared components, design tokens from Figma
 docs/             assignment transcript, standards, decision log
 ```
