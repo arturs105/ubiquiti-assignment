@@ -4,7 +4,7 @@ import Synchronization
 
 /// Replays a scripted answer for each URL and records the request it saw, so `URLSessionFeedClient` is tested
 /// without the live server. Scripts are keyed by URL and every test uses its own URL, so tests run in parallel.
-nonisolated final class StubURLProtocol: URLProtocol {
+final nonisolated class StubURLProtocol: URLProtocol {
     /// What the stub answers for one URL.
     enum Script: Sendable {
         case http(status: Int, headers: [String: String] = [:], body: Data = Data())
@@ -49,7 +49,12 @@ nonisolated final class StubURLProtocol: URLProtocol {
         }
         switch script {
         case let .http(status, headers, body):
-            let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: headers)!
+            let response = HTTPURLResponse(
+                url: url,
+                statusCode: status,
+                httpVersion: "HTTP/1.1",
+                headerFields: headers,
+            )!
             client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client.urlProtocol(self, didLoad: body)
             client.urlProtocolDidFinishLoading(self)
