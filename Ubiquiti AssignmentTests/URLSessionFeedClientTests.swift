@@ -47,6 +47,26 @@ struct URLSessionFeedClientTests {
         #expect(request?.value(forHTTPHeaderField: "If-Modified-Since") == lastModified)
     }
 
+    @Test func etagAloneIsSentWithoutIfModifiedSince() async {
+        let url = StubURLProtocol.script(.http(status: 304))
+
+        _ = await client(url).fetch(validators: Validators(etag: etag, lastModified: nil)).emissions()
+
+        let request = StubURLProtocol.request(for: url)
+        #expect(request?.value(forHTTPHeaderField: "If-None-Match") == etag)
+        #expect(request?.value(forHTTPHeaderField: "If-Modified-Since") == nil)
+    }
+
+    @Test func lastModifiedAloneIsSentWithoutIfNoneMatch() async {
+        let url = StubURLProtocol.script(.http(status: 304))
+
+        _ = await client(url).fetch(validators: Validators(etag: nil, lastModified: lastModified)).emissions()
+
+        let request = StubURLProtocol.request(for: url)
+        #expect(request?.value(forHTTPHeaderField: "If-None-Match") == nil)
+        #expect(request?.value(forHTTPHeaderField: "If-Modified-Since") == lastModified)
+    }
+
     @Test func noValidatorsMeansNoConditionalHeaders() async {
         let url = StubURLProtocol.script(.http(status: 200, body: body))
 
