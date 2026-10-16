@@ -13,7 +13,7 @@ extension CachedFeedRepository {
         }
         let feed: Feed
         do {
-            feed = try JSONDecoder().decode(Feed.self, from: data)
+            feed = try Self.decodeFeed(data)
         } catch {
             recover(reason: "\(Constants.feedFile) does not decode: \(error)")
             return nil
@@ -38,6 +38,11 @@ extension CachedFeedRepository {
         } catch {
             Logger.caching.error("Could not save the feed: \(error)")
         }
+    }
+
+    /// The one place feed bytes become a `Feed`, for the download and for the cached file alike.
+    static func decodeFeed(_ data: Data) throws -> Feed {
+        try JSONDecoder().decode(Feed.self, from: data)
     }
 
     // MARK: - Private helpers

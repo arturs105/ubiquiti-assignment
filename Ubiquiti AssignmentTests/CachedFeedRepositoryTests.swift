@@ -2,8 +2,13 @@ import Foundation
 import Testing
 @testable import Ubiquiti_Assignment
 
+/// A class, not a struct, so `deinit` can remove each test's cache directory once the test is over.
 @Suite(.timeLimit(.minutes(1)))
-struct CachedFeedRepositoryTests {
+final class CachedFeedRepositoryTests {
+    deinit {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
     @Test func noCacheAndANewFeedYieldsOneCurrentSnapshotAndWritesBothFiles() async throws {
         let repository = repository(.success(.updated(data: v1, validators: validators1)))
 

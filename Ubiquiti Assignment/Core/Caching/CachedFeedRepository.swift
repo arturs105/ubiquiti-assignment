@@ -8,7 +8,8 @@ import Synchronization
 /// Owns its cache. Two files under `directory` hold the last downloaded bytes and their validators (see
 /// `CachedFeedRepository+Disk.swift`), and the in-memory copy in front of them, behind a `Mutex`, is what a second
 /// subscription reads. Every step is synchronous, so the pipeline is one `Deferred` chain with no async bridge;
-/// `subscribe(on:)` keeps the disk read off the subscriber's thread. See `docs/DECISIONS.md`, "Mutex, not actor".
+/// `subscribe(on:)` keeps the disk read and write off the subscriber's thread. See `docs/DECISIONS.md`,
+/// "`CachedFeedRepository` is a `final class` behind a `Mutex`, not an `actor`".
 final nonisolated class CachedFeedRepository: FeedRepository, Sendable {
     private let client: any FeedClient
     /// Where the two cache files live. Internal so the disk extension can reach it.
@@ -66,7 +67,7 @@ final nonisolated class CachedFeedRepository: FeedRepository, Sendable {
 
     /// Turns the server's answer into the snapshot to emit, updating the in-memory copy, then saves the download
     /// after the snapshot is out so the screen never waits on disk. Saves nothing on unchanged or on bytes that do
-    /// not decode; with a cached feed in memory the failure becomes stale upstream.
+    /// not decode; with a cached feed in memory the failure becomes stale downstream.
     private func integrate(_ response: FeedResponse) -> AnyPublisher<FeedSnapshot, FeedError> {
         switch response {
         case .unchanged:
@@ -81,17 +82,20 @@ final nonisolated class CachedFeedRepository: FeedRepository, Sendable {
         case let .updated(data, validators):
             let downloaded: Feed
             do {
-                downloaded = try JSONDecoder().decode(Feed.self, from: data)
+                downloaded = try Self.decodeFeed(data)
             } catch {
                 Logger.caching.error("Downloaded feed does not decode: \(error)")
                 return Fail(error: .decoding(String(describing: error))).eraseToAnyPublisher()
             }
             let shown = remember(downloaded, validators: validators)
+            // The write runs on the cache queue, not on the network's delivery thread, so two overlapping refreshes
+            // write their pairs one after the other and the files never come from different downloads.
             return Self.emit(shown, as: .current)
                 .append(Deferred { [self] in
                     write(Download(data: data, validators: validators))
                     return Empty<FeedSnapshot, FeedError>()
-                })
+                }
+                .subscribe(on: Constants.queue))
                 .eraseToAnyPublisher()
         }
     }
@@ -146,7 +150,8 @@ extension CachedFeedRepository {
         static let defaultDirectory = URL.cachesDirectory.appending(path: "Feed")
         static let feedFile = "feed.json"
         static let validatorsFile = "validators.json"
-        /// Where the cache read runs, so a subscription from the main thread never blocks on disk.
+        /// Where the cache read and write run: a subscription from the main thread never blocks on disk, and the
+        /// serial queue keeps two refreshes from interleaving their writes.
         static let queue = DispatchQueue(label: "feed-cache", qos: .userInitiated)
     }
 }
