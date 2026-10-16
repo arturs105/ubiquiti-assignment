@@ -1,4 +1,5 @@
---swiftversion 6.0
+--minversion 0.63.1
+--swiftversion 6.2
 --indent 4
 --maxwidth 120
 --wraparguments before-first
@@ -9,6 +10,6 @@
 --importgrouping testable-bottom
 --extensionacl on-declarations
 --header strip
---enable isEmpty, wrapEnumCases, blankLinesBetweenImports, organizeDeclarations
+--enable isEmpty, wrapEnumCases, blankLinesBetweenImports
 --markcategories false
---disable andOperator
+--disable andOperator, wrapPropertyBodies, swiftTestingTestCaseNames
