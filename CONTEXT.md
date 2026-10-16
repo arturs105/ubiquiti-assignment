@@ -34,3 +34,15 @@ _Avoid_: Fingerprint, cache tag, revision
 **Unchanged**:
 The server's answer to a request carrying validators when the feed has not changed since. Nothing is downloaded; the stored feed stands.
 _Avoid_: 304, not modified, cache hit
+
+**Cached feed**:
+The last downloaded feed bytes kept on disk together with their validators. What the app shows before the server has answered, and what it falls back to when the server cannot be reached.
+_Avoid_: Store, cache (as a noun for the data)
+
+**Snapshot**:
+The feed the screen shows right now, together with how far it can be trusted: cached, current or stale.
+_Avoid_: Result, state, response
+
+**Stale**:
+A cached feed shown because the app could not ask the server whether it changed. Stale is about the refresh failing, not about age: a day-old cached feed the server has confirmed is current, not stale.
+_Avoid_: Outdated, offline, expired
