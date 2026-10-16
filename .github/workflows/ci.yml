@@ -1,0 +1,38 @@
+# Runs the same three Make targets a developer runs locally, so a green check on a PR means the branch is
+# formatted, builds and passes its tests. Pull requests cover every push to a feature branch; the push trigger
+# is limited to main so a PR branch is not built twice.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint, build and test
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      # The README asks for Xcode 26; the macos-26 image ships several, so select it rather than trust the default.
+      - name: Select Xcode 26
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+
+      # The image preinstalls an older SwiftFormat; upgrade it to meet the floor .swiftformat pins, or install it
+      # if a future image drops it.
+      - name: Install SwiftFormat
+        run: brew upgrade swiftformat || brew install swiftformat
+
+      - name: Lint
+        run: make lint
+
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: make test

@@ -25,6 +25,18 @@ make run
 ```
 ❗ Note that this sort of workflow expects the run command to be executed on the remote computer and RUN_HOST is the computer where the app will be launched.
 
+### Tooling
+
+Formatting is enforced by [SwiftFormat](https://github.com/nicklockwood/SwiftFormat) 0.63.1 or newer, configured in `.swiftformat`:
+
+```sh
+brew install swiftformat
+make format   # rewrite app and test sources in place
+make lint     # dry run, exits non-zero on any diff
+```
+
+`make lint` fails with an install hint when SwiftFormat is missing. GitHub Actions runs `make lint`, `make build` and `make test` on every pull request and on every push to `main` (`.github/workflows/ci.yml`), so the check on a PR means the branch is formatted, builds and passes its tests.
+
 ## Assumptions and tradeoffs
 
 _To be distilled from `docs/DECISIONS.md` before submission._
