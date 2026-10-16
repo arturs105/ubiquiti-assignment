@@ -45,7 +45,7 @@ final nonisolated class CachedFeedRepository: FeedRepository, Sendable {
     /// One snapshot, then completion: the shape every branch of the pipeline ends in.
     private static func emit(
         _ feed: Feed,
-        as freshness: FeedSnapshot.Freshness
+        as freshness: FeedSnapshot.Freshness,
     ) -> AnyPublisher<FeedSnapshot, FeedError> {
         Just(FeedSnapshot(feed: feed, freshness: freshness)).setFailureType(to: FeedError.self).eraseToAnyPublisher()
     }

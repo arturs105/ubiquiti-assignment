@@ -165,7 +165,7 @@ struct CachedFeedRepositoryTests {
         try seed(bytes: nil, validators: validators1)
         try FileManager.default.createDirectory(
             at: feedFileURL,
-            withIntermediateDirectories: false
+            withIntermediateDirectories: false,
         )
         let client = RecordingFeedClient(result: .failure(.httpStatus(500)))
 
