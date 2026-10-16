@@ -9,6 +9,7 @@ nonisolated protocol FeedClient: Sendable {
     /// Requests the feed, sending `validators` as a conditional request when they are present.
     ///
     /// Emits exactly one `FeedResponse` then completes, or fails once with a `NetworkError`. No retry: the caller
-    /// decides when to try again. Completes on a background queue; the caller receives on main if it needs to.
+    /// decides when to try again. May emit on any queue, including synchronously on the subscribing one (the
+    /// in-memory fake does); callers that touch main-actor state must `receive(on:)` main themselves.
     func fetch(validators: Validators) -> AnyPublisher<FeedResponse, NetworkError>
 }
