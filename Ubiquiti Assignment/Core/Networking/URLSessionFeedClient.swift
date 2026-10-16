@@ -48,7 +48,8 @@ nonisolated struct URLSessionFeedClient: FeedClient {
         conditional: Bool,
     ) -> Result<FeedResponse, NetworkError> {
         guard let http = response as? HTTPURLResponse else {
-            Logger.networking.error("Non-HTTP response from \(response.url?.absoluteString ?? "feed")")
+            let source = response.url?.absoluteString ?? "feed"
+            Logger.networking.error("Non-HTTP response from \(source, privacy: .public)")
             return .failure(.invalidResponse)
         }
         Logger.networking.info("HTTP \(http.statusCode), \(data.count) bytes")
