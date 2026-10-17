@@ -27,6 +27,9 @@ struct StaleDataBanner: View {
                     .textStyle(.caption)
                     .foregroundStyle(.foregroundSecondary)
             }
+            // Padding on the message, not the row, so wrapped text clears the edges at large Dynamic Type sizes
+            // without growing the default row past the 44pt Retry target.
+            .padding(.vertical, Spacing.small)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
             if let retry {
