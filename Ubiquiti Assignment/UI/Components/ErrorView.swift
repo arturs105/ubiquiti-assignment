@@ -26,7 +26,7 @@ struct ErrorView: View {
                 .textStyle(.body)
                 .foregroundStyle(.foregroundPrimary)
         } actions: {
-            Button("Retry", systemImage: "arrow.clockwise", action: retry)
+            Button(ButtonTitle.retry, systemImage: "arrow.clockwise", action: retry)
                 .buttonStyle(.borderedProminent)
         }
         .background(.backgroundSecondary)
