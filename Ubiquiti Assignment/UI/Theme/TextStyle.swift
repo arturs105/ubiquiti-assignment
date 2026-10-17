@@ -30,12 +30,4 @@ enum TextStyle {
         case .tabSelected: .subheadline.bold()
         }
     }
-
-    /// Figma sets -0.208 tracking on the 16pt styles only.
-    var tracking: CGFloat {
-        switch self {
-        case .body, .bodyBold: -0.208
-        case .caption, .tab, .tabSelected: 0
-        }
-    }
 }
