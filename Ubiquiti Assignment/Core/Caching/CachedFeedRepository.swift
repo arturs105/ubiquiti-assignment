@@ -1,16 +1,21 @@
 import Foundation
 import OSLog
 
-/// The production `FeedRepository`: the cached feed from disk, then a conditional fetch that replaces it.
+/// The production `FeedRepository`: the cached feed from disk, a conditional fetch that replaces it, and a stream
+/// of every feed that fetch saves.
 ///
 /// Owns its cache. Two files under `directory` hold the last downloaded bytes and their validators (see
-/// `CachedFeedRepository+Disk.swift`), and that is all the state there is: every call starts from disk, so nothing
-/// held here can drift from what is saved. Disk is read and written on the actor, off whatever task asked; the
-/// network call is the only suspension point. See `docs/DECISIONS.md`, "The repository holds no feed in memory".
+/// `CachedFeedRepository+Disk.swift`). No feed is held in memory: every call starts from disk, so nothing held here
+/// can drift from what is saved. The only other state is the list of `updates()` subscribers, each a stream
+/// continuation that is handed the feed right after it is written. Disk is read and written on the actor, off
+/// whatever task asked; the network call is the only suspension point. See `docs/DECISIONS.md`, "The repository
+/// holds no feed in memory" and "The repository streams updates".
 actor CachedFeedRepository: FeedRepository {
     private let client: any FeedClient
     /// Where the two cache files live. Internal so the disk extension can reach it.
     let directory: URL
+    /// One continuation per live `updates()` subscription, keyed so a cancelled one can be dropped.
+    private var subscribers: [UUID: AsyncStream<Feed>.Continuation] = [:]
 
     /// - Parameters:
     ///   - client: the network seam the refresh goes through.
@@ -18,6 +23,12 @@ actor CachedFeedRepository: FeedRepository {
     init(client: any FeedClient, directory: URL = Constants.defaultDirectory) {
         self.client = client
         self.directory = directory
+    }
+
+    deinit {
+        for continuation in subscribers.values {
+            continuation.finish()
+        }
     }
 
     // MARK: - FeedRepository
@@ -59,8 +70,30 @@ actor CachedFeedRepository: FeedRepository {
             Logger.caching.info("Downloaded feed version \(feed.version, privacy: .public)")
             // The caller waits on the write: milliseconds, and the cached feed is already on screen by then.
             write(Download(data: data, validators: validators))
+            // Subscribers hear of a feed only once it is saved, so what they show is what disk holds.
+            for continuation in subscribers.values {
+                continuation.yield(feed)
+            }
             return .updated(feed)
         }
+    }
+
+    func updates() -> AsyncStream<Feed> {
+        // Newest-one buffering: a subscriber that is mid-render when two downloads land only wants the last.
+        let (stream, continuation) = AsyncStream.makeStream(of: Feed.self, bufferingPolicy: .bufferingNewest(1))
+        let id = UUID()
+        subscribers[id] = continuation
+        continuation.onTermination = { [weak self] _ in
+            // Runs on whatever task cancelled the iteration; the dictionary is actor state, so hop back.
+            Task { await self?.forget(id) }
+        }
+        return stream
+    }
+
+    // MARK: - Private helpers
+
+    private func forget(_ id: UUID) {
+        subscribers[id] = nil
     }
 }
 

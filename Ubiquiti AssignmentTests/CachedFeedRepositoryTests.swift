@@ -228,6 +228,91 @@ final class CachedFeedRepositoryTests {
         }
     }
 
+    // MARK: - Updates
+
+    @Test func anUpdatedRefreshReachesASubscriberOnceItIsSaved() async throws {
+        let repository = repository(.success(.updated(data: v1, validators: validators1)))
+        let updates = await repository.updates()
+
+        _ = await repository.load()
+
+        let update = await updates.firstElement()
+        #expect(try update == feed(v1))
+        #expect(try cachedBytes() == v1)
+    }
+
+    @Test func everySubscriberHearsTheSameUpdate() async throws {
+        let repository = repository(.success(.updated(data: v1, validators: validators1)))
+        let first = await repository.updates()
+        let second = await repository.updates()
+
+        _ = await repository.load()
+
+        #expect(try await first.firstElement() == feed(v1))
+        #expect(try await second.firstElement() == feed(v1))
+    }
+
+    @Test func unchangedAndFailedRefreshesHandSubscribersNothing() async throws {
+        // Dropping the repository ends every stream, so collecting it proves what was buffered: nothing. A
+        // repository that re-sent the cached feed on a 304 would fail here.
+        try seed(bytes: v1, validators: validators1)
+        var repository: CachedFeedRepository? = repository(RecordingFeedClient(results: [
+            .success(.unchanged),
+            .failure(.httpStatus(503)),
+        ]))
+        let updates = try await #require(repository).updates()
+
+        _ = await repository?.load()
+        _ = await repository?.load()
+        repository = nil
+
+        let collected = await updates.collect()
+        #expect(collected.isEmpty)
+    }
+
+    @Test func aSubscriberHearsOnlyTheUpdatesAfterItSubscribed() async throws {
+        var repository: CachedFeedRepository? = repository(RecordingFeedClient(results: [
+            .success(.updated(data: v1, validators: validators1)),
+            .success(.updated(data: v2, validators: validators2)),
+        ]))
+        _ = await repository?.load()
+        let updates = try await #require(repository).updates()
+
+        _ = await repository?.load()
+        repository = nil
+
+        let collected = await updates.collect()
+        #expect(try collected == [feed(v2)])
+    }
+
+    @Test func aSubscriberThatFallsBehindGetsTheLatestFeedOnly() async throws {
+        var repository: CachedFeedRepository? = repository(RecordingFeedClient(results: [
+            .success(.updated(data: v1, validators: validators1)),
+            .success(.updated(data: v2, validators: validators2)),
+        ]))
+        let updates = try await #require(repository).updates()
+
+        _ = await repository?.load()
+        _ = await repository?.load()
+        repository = nil
+
+        let collected = await updates.collect()
+        #expect(try collected == [feed(v2)])
+    }
+
+    @Test func aCancelledSubscriptionIsForgottenAndLaterUpdatesStillReachTheOthers() async throws {
+        let repository = repository(.success(.updated(data: v1, validators: validators1)))
+        let cancelled = await repository.updates()
+        let kept = await repository.updates()
+        let iteration = Task { await cancelled.firstElement() }
+        iteration.cancel()
+        _ = await iteration.value
+
+        _ = await repository.load()
+
+        #expect(try await kept.firstElement() == feed(v1))
+    }
+
     /// A directory of its own per test, so Swift Testing's parallel execution never shares a cache.
     private let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
 
