@@ -2,8 +2,9 @@ import SwiftUI
 
 /// The five Figma text styles mapped onto semantic system text styles, so each scales with Dynamic Type.
 ///
-/// SF Pro Text is the system font, so `body` and `caption` match Figma at the default size. The tab styles are
-/// UI Sans in Figma, which is not bundled, and fall back to `subheadline`. See `docs/DECISIONS.md`.
+/// SF Pro Text is the system font, so the 16pt styles map to `callout` and the 12pt style to `caption`, which match
+/// Figma at the default size. The tab styles are UI Sans in Figma, which is not bundled, and fall back to
+/// `subheadline`. See `docs/DECISIONS.md`.
 enum TextStyle {
     /// `Mobile/16pt-SF-Pro`: row titles, detail labels, error copy.
     case body
@@ -22,8 +23,8 @@ enum TextStyle {
 
     var font: Font {
         switch self {
-        case .body: .body
-        case .bodyBold: .body.bold()
+        case .body: .callout
+        case .bodyBold: .callout.bold()
         case .caption: .caption
         case .tab: .subheadline
         case .tabSelected: .subheadline.bold()
