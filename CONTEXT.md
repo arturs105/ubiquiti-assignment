@@ -46,3 +46,7 @@ _Avoid_: Snapshot, result, response
 **Stale**:
 A feed kept on screen because the refresh behind it failed. The view model's state, not the repository's: the repository reports the failure and holds nothing. Stale is about the refresh failing, not about age: a day-old cached feed the server has confirmed is current, not stale.
 _Avoid_: Outdated, offline, expired
+
+**Update**:
+A feed a refresh has just saved, handed to every screen subscribed to the repository, whoever triggered the refresh. Never the cached feed and never a failure: the first comes from `cachedFeed()`, the second goes to whoever called `refresh()`.
+_Avoid_: Event, change, notification, publish (outside the in-memory fake's test hook)
