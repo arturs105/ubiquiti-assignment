@@ -6,9 +6,9 @@ Swift 6 language mode (strict concurrency, errors not warnings), approachable co
 
 MVVM, one `View` + one `ViewModel` per screen under `Features/<Screen>/`.
 
-- **ViewModel**: `final class`, `@MainActor`, `@Observable`. Exposes plain stored state and intent methods (`load()`, `select(category:)`). Holds no SwiftUI types. Not `ObservableObject`: Observation is the current API, and Combine lives in Core and in the pipelines the view model subscribes to, not in the state properties themselves.
+- **ViewModel**: `final class`, `@MainActor`, `@Observable`. Exposes plain stored state and intent methods (`load()`, `select(category:)`). Holds no SwiftUI types. Not `ObservableObject`: Observation is the current API, and Combine lives in the derived-state pipelines inside the view model, not in the state properties themselves. Core is called with `await` from a `Task` an intent method starts.
 - **View**: renders state, forwards intents. No networking, no business logic, no `Task {}` that does more than call an intent.
-- **Core**: pure Swift. Services are protocols (`FeedRepository`, `ImageLoader`) with one production implementation and one in-memory fake for tests and previews. Inject through initialisers, never through singletons or `@Environment`. Every Core type and protocol is declared `nonisolated`: the target defaults to `MainActor`, and networking, decoding and caching must not be inferred as main-actor work that Combine then runs on background queues. Shared mutable state in Core (caches, stores) lives in an `actor` or behind a `Mutex`, never in a plain class. No `nonisolated(unsafe)`, no `@preconcurrency import`; if one is ever unavoidable, log it in `docs/DECISIONS.md`.
+- **Core**: pure Swift. Services are protocols (`FeedRepository`, `ImageLoader`) with one production implementation and one in-memory fake for tests and previews. Inject through initialisers, never through singletons or `@Environment`. Every Core type and protocol is declared `nonisolated`: the target defaults to `MainActor`, and networking, decoding and caching must run off the main actor. An `actor` is its own isolation and takes no modifier. Shared mutable state in Core (caches, stores) lives in an `actor`; `Mutex` is for `Sendable` wrappers that must stay synchronous, never a plain class. No `nonisolated(unsafe)`, no `@preconcurrency import`; if one is ever unavoidable, log it in `docs/DECISIONS.md`.
 
 Screen state is a single enum, so the view switches over it exhaustively:
 
@@ -22,18 +22,21 @@ enum LoadState<Value> {
 }
 ```
 
-## Combine
+## Concurrency and Combine
 
-- Networking returns `AnyPublisher<Output, NetworkError>` built on `URLSession.dataTaskPublisher`; the failure type is the service's typed error, never `Error`.
-- Inputs that drive derived state (selected tab, products) are fed into subjects (`CurrentValueSubject`) and derived state (the filtered list) is a `CombineLatest` pipeline that sinks into the view model's stored property, so filtering never calls a method by hand.
-- Cache-then-network is one sequential pipeline: the cache read emits first, then `flatMap`s into a conditional fetch keyed by the validators the cache held, so the list renders from disk and refreshes behind it. Not `Merge`: the fetch depends on the cache read, and a fail-fast offline error must never outrun the disk read (see `docs/DECISIONS.md`).
-- The image loader shares in-flight publishers per URL (`share()` + a dictionary of pending publishers) so concurrent requests fetch once.
-- Every subscription stores in `private var cancellables = Set<AnyCancellable>()`. Receive on `DispatchQueue.main` before touching published state.
-- Reach for async/await only at the edges where Combine has no equivalent. The assignment grades Combine use.
+Core is async/await; Combine is the view model's derived-state pipeline. The assignment grades Combine use, so the pipeline is written out as publishers, never as a method the view model calls by hand. `docs/DECISIONS.md` (2026-10-17) records why Combine left Core.
+
+- Services expose `async` methods with typed throws (`throws(NetworkError)`, `throws(FeedError)`); the failure type is the service's typed error, never `any Error`. Networking is `URLSession.data(for:)`; an untyped error it throws is wrapped into the typed one, never rethrown as is.
+- `CachedFeedRepository` is an `actor`. Its files and its in-memory copy are touched only by methods that run on it, so reads and writes never interleave and no lock exists. The only suspension point inside a method is the network call; state is read again after it.
+- Cache-then-network is two awaited calls in order: `cachedSnapshot()` then `refresh()`, the fetch keyed by the validators the cache held, so the list renders from disk and refreshes behind it. The fetch never starts before the cache read, and a fail-fast offline error cannot outrun it (see `docs/DECISIONS.md`).
+- The image loader is an actor that shares the in-flight `Task` per URL so concurrent requests fetch once.
+- View models start a `Task` in the intent method (`load()`, `refresh()`), await Core, and assign state. The task is stored so a repeated intent cancels the one in flight. The view model is `@MainActor`, so the assignment needs no hop.
+- Inputs that drive derived state (selected tab, products) are fed into subjects (`CurrentValueSubject`) and derived state (the filtered list) is a `CombineLatest` pipeline that sinks into the view model's stored property. Every subscription stores in `private var cancellables = Set<AnyCancellable>()`. The pipeline runs on the main actor with the view model, so no `receive(on:)` is needed.
+- Nothing in Core imports Combine.
 
 ## Caching
 
-The feed repository owns its cache: raw feed bytes and validators as two files in the Caches directory, with the in-memory copy in front, behind a `Mutex` in one `Sendable` class. No separate store protocol, and no actor: Combine's `Future` cannot be fed from a `Task` under Swift 6 without unchecked code (see `docs/DECISIONS.md`). Images cache through `URLCache` configured once at app start. Cache reads happen before the network call so the list renders from cache instantly and refreshes behind it.
+The feed repository owns its cache: raw feed bytes and validators as two files in the Caches directory, with the in-memory copy in front, as state of one `actor`. No separate store protocol (see `docs/DECISIONS.md`). Images cache through `URLCache` configured once at app start. The cache read happens before the network call so the list renders from cache instantly and refreshes behind it; the disk write happens before `refresh()` returns, on the actor, so a returned snapshot is also a saved one.
 
 ## Errors
 
