@@ -39,10 +39,10 @@ _Avoid_: 304, not modified, cache hit
 The last downloaded feed bytes kept on disk together with their validators. What the app shows before the server has answered, and what it falls back to when the server cannot be reached.
 _Avoid_: Store, cache (as a noun for the data)
 
-**Snapshot**:
-The feed the screen shows right now, together with how far it can be trusted: cached, current or stale.
-_Avoid_: Result, state, response
+**Refresh outcome**:
+What the server said when asked for the feed: unchanged, or an updated feed that is now the cached feed. A refresh that fails has no outcome; the app keeps what it shows and calls it stale.
+_Avoid_: Snapshot, result, response
 
 **Stale**:
-A cached feed shown because the app could not ask the server whether it changed. Stale is about the refresh failing, not about age: a day-old cached feed the server has confirmed is current, not stale.
+A feed kept on screen because the refresh behind it failed. The view model's state, not the repository's: the repository reports the failure and holds nothing. Stale is about the refresh failing, not about age: a day-old cached feed the server has confirmed is current, not stale.
 _Avoid_: Outdated, offline, expired

@@ -27,8 +27,8 @@ enum LoadState<Value> {
 Core is async/await; Combine is the view model's derived-state pipeline. The assignment grades Combine use, so the pipeline is written out as publishers, never as a method the view model calls by hand. `docs/DECISIONS.md` (2026-10-17) records why Combine left Core.
 
 - Services expose `async` methods with typed throws (`throws(NetworkError)`, `throws(FeedError)`); the failure type is the service's typed error, never `any Error`. Networking is `URLSession.data(for:)`; an untyped error it throws is wrapped into the typed one, never rethrown as is.
-- `CachedFeedRepository` is an `actor`. Its files and its in-memory copy are touched only by methods that run on it, so reads and writes never interleave and no lock exists. The only suspension point inside a method is the network call; state is read again after it.
-- Cache-then-network is two awaited calls in order: `cachedSnapshot()` then `refresh()`, the fetch keyed by the validators the cache held, so the list renders from disk and refreshes behind it. The fetch never starts before the cache read, and a fail-fast offline error cannot outrun it (see `docs/DECISIONS.md`).
+- `CachedFeedRepository` is an `actor` with no state beyond its two files. They are touched only by methods that run on it, so reads and writes never interleave and no lock exists. The only suspension point inside a method is the network call.
+- Cache-then-network is two awaited calls in order: `cachedFeed()` then `refresh()`, the fetch keyed by the validators saved beside the cached feed, so the list renders from disk and refreshes behind it. The repository holds nothing between calls; the view model keeps the feed on screen and turns a refresh outcome (`unchanged`, `updated`, or an error) into its own state, stale included. The fetch never starts before the cache read, and a fail-fast offline error cannot outrun it (see `docs/DECISIONS.md`).
 - The image loader is an actor that shares the in-flight `Task` per URL so concurrent requests fetch once.
 - View models start a `Task` in the intent method (`load()`, `refresh()`), await Core, and assign state. The task is stored so a repeated intent cancels the one in flight. The view model is `@MainActor`, so the assignment needs no hop.
 - Inputs that drive derived state (selected tab, products) are fed into subjects (`CurrentValueSubject`) and derived state (the filtered list) is a `CombineLatest` pipeline that sinks into the view model's stored property. Every subscription stores in `private var cancellables = Set<AnyCancellable>()`. The pipeline runs on the main actor with the view model, so no `receive(on:)` is needed.
@@ -36,7 +36,7 @@ Core is async/await; Combine is the view model's derived-state pipeline. The ass
 
 ## Caching
 
-The feed repository owns its cache: raw feed bytes and validators as two files in the Caches directory, with the in-memory copy in front, as state of one `actor`. No separate store protocol (see `docs/DECISIONS.md`). Images cache through `URLCache` configured once at app start. The cache read happens before the network call so the list renders from cache instantly and refreshes behind it; the disk write happens before `refresh()` returns, on the actor, so a returned snapshot is also a saved one.
+The feed repository owns its cache: raw feed bytes and validators as two files in the Caches directory, read by one `actor` on every call and never held in memory. No separate store protocol (see `docs/DECISIONS.md`). Images cache through `URLCache` configured once at app start. The cache read happens before the network call so the list renders from cache instantly and refreshes behind it; the disk write happens before `refresh()` returns, on the actor, so a returned feed is also a saved one.
 
 ## Errors
 
