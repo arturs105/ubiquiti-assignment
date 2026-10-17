@@ -17,60 +17,60 @@ struct URLSessionFeedClientTests {
         #expect(url.host() == "static.ui.com")
     }
 
-    @Test func fullResponseCarriesTheExactBytesAndBothValidators() async {
+    @Test func fullResponseCarriesTheExactBytesAndBothValidators() async throws {
         let url = StubURLProtocol.script(.http(
             status: 200,
             headers: ["ETag": etag, "Last-Modified": lastModified],
             body: body,
         ))
 
-        let result = await client(url).fetch(validators: .empty).emissions()
+        let response = try await client(url).fetch(validators: .empty)
 
-        #expect(result == .success([.updated(data: body, validators: validators)]))
+        #expect(response == .updated(data: body, validators: validators))
     }
 
-    @Test func fullResponseWithoutValidatorHeadersYieldsNilValidators() async {
+    @Test func fullResponseWithoutValidatorHeadersYieldsNilValidators() async throws {
         let url = StubURLProtocol.script(.http(status: 200, body: body))
 
-        let result = await client(url).fetch(validators: .empty).emissions()
+        let response = try await client(url).fetch(validators: .empty)
 
-        #expect(result == .success([.updated(data: body, validators: .empty)]))
+        #expect(response == .updated(data: body, validators: .empty))
     }
 
-    @Test func validatorsAreSentVerbatimAsConditionalHeaders() async {
+    @Test func validatorsAreSentVerbatimAsConditionalHeaders() async throws {
         let url = StubURLProtocol.script(.http(status: 304))
 
-        _ = await client(url).fetch(validators: validators).emissions()
+        _ = try await client(url).fetch(validators: validators)
 
         let request = StubURLProtocol.request(for: url)
         #expect(request?.value(forHTTPHeaderField: "If-None-Match") == etag)
         #expect(request?.value(forHTTPHeaderField: "If-Modified-Since") == lastModified)
     }
 
-    @Test func etagAloneIsSentWithoutIfModifiedSince() async {
+    @Test func etagAloneIsSentWithoutIfModifiedSince() async throws {
         let url = StubURLProtocol.script(.http(status: 304))
 
-        _ = await client(url).fetch(validators: Validators(etag: etag, lastModified: nil)).emissions()
+        _ = try await client(url).fetch(validators: Validators(etag: etag, lastModified: nil))
 
         let request = StubURLProtocol.request(for: url)
         #expect(request?.value(forHTTPHeaderField: "If-None-Match") == etag)
         #expect(request?.value(forHTTPHeaderField: "If-Modified-Since") == nil)
     }
 
-    @Test func lastModifiedAloneIsSentWithoutIfNoneMatch() async {
+    @Test func lastModifiedAloneIsSentWithoutIfNoneMatch() async throws {
         let url = StubURLProtocol.script(.http(status: 304))
 
-        _ = await client(url).fetch(validators: Validators(etag: nil, lastModified: lastModified)).emissions()
+        _ = try await client(url).fetch(validators: Validators(etag: nil, lastModified: lastModified))
 
         let request = StubURLProtocol.request(for: url)
         #expect(request?.value(forHTTPHeaderField: "If-None-Match") == nil)
         #expect(request?.value(forHTTPHeaderField: "If-Modified-Since") == lastModified)
     }
 
-    @Test func noValidatorsMeansNoConditionalHeaders() async {
+    @Test func noValidatorsMeansNoConditionalHeaders() async throws {
         let url = StubURLProtocol.script(.http(status: 200, body: body))
 
-        _ = await client(url).fetch(validators: .empty).emissions()
+        _ = try await client(url).fetch(validators: .empty)
 
         let request = StubURLProtocol.request(for: url)
         #expect(request != nil)
@@ -78,49 +78,51 @@ struct URLSessionFeedClientTests {
         #expect(request?.value(forHTTPHeaderField: "If-Modified-Since") == nil)
     }
 
-    @Test func notModifiedAfterAConditionalRequestIsUnchanged() async {
+    @Test func notModifiedAfterAConditionalRequestIsUnchanged() async throws {
         let url = StubURLProtocol.script(.http(status: 304))
 
-        let result = await client(url).fetch(validators: validators).emissions()
+        let response = try await client(url).fetch(validators: validators)
 
-        #expect(result == .success([.unchanged]))
+        #expect(response == .unchanged)
     }
 
     @Test func notModifiedWithoutValidatorsIsAStatusError() async {
         let url = StubURLProtocol.script(.http(status: 304))
 
-        let result = await client(url).fetch(validators: .empty).emissions()
-
-        #expect(result == .failure(.httpStatus(304)))
+        await #expect(throws: NetworkError.httpStatus(304)) {
+            try await client(url).fetch(validators: .empty)
+        }
     }
 
     @Test func serverErrorStatusIsReportedAsIs() async {
         let url = StubURLProtocol.script(.http(status: 404, body: Data("not found".utf8)))
 
-        let result = await client(url).fetch(validators: .empty).emissions()
-
-        #expect(result == .failure(.httpStatus(404)))
+        await #expect(throws: NetworkError.httpStatus(404)) {
+            try await client(url).fetch(validators: .empty)
+        }
     }
 
     @Test func transportFailureCarriesTheURLError() async {
         let url = StubURLProtocol.script(.failure(URLError(.notConnectedToInternet)))
 
-        let result = await client(url).fetch(validators: .empty).emissions()
+        let error = await #expect(throws: NetworkError.self) {
+            try await client(url).fetch(validators: .empty)
+        }
 
         // The session adds its task to the error's userInfo, so compare the code, which is what callers map on.
-        guard case let .failure(.network(error)) = result else {
-            Issue.record("Expected a network failure, got \(result)")
+        guard case let .network(urlError) = error else {
+            Issue.record("Expected a network failure, got \(String(describing: error))")
             return
         }
-        #expect(error.code == .notConnectedToInternet)
+        #expect(urlError.code == .notConnectedToInternet)
     }
 
     @Test func nonHTTPResponseIsInvalid() async {
         let url = StubURLProtocol.script(.nonHTTP)
 
-        let result = await client(url).fetch(validators: .empty).emissions()
-
-        #expect(result == .failure(.invalidResponse))
+        await #expect(throws: NetworkError.invalidResponse) {
+            try await client(url).fetch(validators: .empty)
+        }
     }
 
     // MARK: - Helpers

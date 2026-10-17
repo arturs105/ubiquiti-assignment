@@ -1,0 +1,120 @@
+import Foundation
+import OSLog
+
+/// The production `FeedRepository`: the cached feed from disk, a conditional fetch that replaces it, and a stream
+/// of every feed that fetch saves.
+///
+/// Owns its cache. Two files under `directory` hold the last downloaded bytes and their validators (see
+/// `CachedFeedRepository+Disk.swift`). No feed is held in memory: every call starts from disk, so nothing held here
+/// can drift from what is saved. The only other state is the list of `updates()` subscribers, each a stream
+/// continuation that is handed the feed right after it is written. Disk is read and written on the actor, off
+/// whatever task asked; the network call is the only suspension point. See `docs/DECISIONS.md`, "The repository
+/// holds no feed in memory" and "The repository streams updates".
+actor CachedFeedRepository: FeedRepository {
+    private let client: any FeedClient
+    /// Where the two cache files live. Internal so the disk extension can reach it.
+    let directory: URL
+    /// One continuation per live `updates()` subscription, keyed so a cancelled one can be dropped.
+    private var subscribers: [UUID: AsyncStream<Feed>.Continuation] = [:]
+
+    /// - Parameters:
+    ///   - client: the network seam the refresh goes through.
+    ///   - directory: the cache directory; tests pass a temporary one.
+    init(client: any FeedClient, directory: URL = Constants.defaultDirectory) {
+        self.client = client
+        self.directory = directory
+    }
+
+    deinit {
+        for continuation in subscribers.values {
+            continuation.finish()
+        }
+    }
+
+    // MARK: - FeedRepository
+
+    func cachedFeed() -> Feed? {
+        readCachedFeed()?.feed
+    }
+
+    func refresh() async throws(FeedError) -> FeedRefresh {
+        // Read, not remembered: validators are only ever sent beside a feed that decodes, and reading the pair is
+        // what proves that. Milliseconds for one feed, on the actor, off the main actor.
+        let validators = readCachedFeed()?.validators ?? .empty
+        let response: FeedResponse
+        do {
+            response = try await client.fetch(validators: validators)
+        } catch {
+            throw .network(error)
+        }
+        // From here the actor runs to completion without interleaving, so two overlapping refreshes decode and
+        // save one after the other and the files never come from different downloads.
+        switch response {
+        case .unchanged:
+            guard validators.isConditional else {
+                // Unreachable through the real client, which answers unchanged only to a conditional request. A
+                // 304 with nothing to confirm is the same status error the client itself reports for one (see
+                // `docs/DECISIONS.md`).
+                throw .network(.httpStatus(HTTPStatus.notModified))
+            }
+            Logger.caching.info("Feed unchanged")
+            return .unchanged
+        case let .updated(data, validators):
+            let feed: Feed
+            do {
+                feed = try Self.decodeFeed(data)
+            } catch {
+                Logger.caching.error("Downloaded feed does not decode: \(error)")
+                throw .decoding(String(describing: error))
+            }
+            Logger.caching.info("Downloaded feed version \(feed.version, privacy: .public)")
+            // The caller waits on the write: milliseconds, and the cached feed is already on screen by then.
+            write(Download(data: data, validators: validators))
+            // Subscribers hear of a feed only once it is saved, so what they show is what disk holds.
+            for continuation in subscribers.values {
+                continuation.yield(feed)
+            }
+            return .updated(feed)
+        }
+    }
+
+    func updates() -> AsyncStream<Feed> {
+        // Newest-one buffering: a subscriber that is mid-render when two downloads land only wants the last.
+        let (stream, continuation) = AsyncStream.makeStream(of: Feed.self, bufferingPolicy: .bufferingNewest(1))
+        let id = UUID()
+        subscribers[id] = continuation
+        continuation.onTermination = { [weak self] _ in
+            // Runs on whatever task cancelled the iteration; the dictionary is actor state, so hop back.
+            Task { await self?.forget(id) }
+        }
+        return stream
+    }
+
+    // MARK: - Private helpers
+
+    private func forget(_ id: UUID) {
+        subscribers[id] = nil
+    }
+}
+
+extension CachedFeedRepository {
+    /// The pair on disk, decoded: the feed and the validators that came with its bytes.
+    nonisolated struct CachedFeed: Sendable {
+        let feed: Feed
+        let validators: Validators
+    }
+
+    /// Fresh bytes and validators the server just sent, as they go to disk.
+    nonisolated struct Download: Sendable {
+        let data: Data
+        let validators: Validators
+    }
+
+    /// File names and locations shared by the pipeline, the disk extension and the tests.
+    nonisolated enum Constants {
+        /// `Library/Caches/Feed/`: purgeable by the system, which the recovery rules tolerate.
+        static let defaultDirectory = URL.cachesDirectory.appending(path: "Feed")
+        static let feedFile = "feed.json"
+        static let validatorsFile = "validators.json"
+    }
+}
