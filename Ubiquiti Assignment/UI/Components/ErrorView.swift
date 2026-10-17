@@ -34,15 +34,9 @@ struct ErrorView: View {
 }
 
 #Preview("Offline") {
-    struct PreviewError: LocalizedError {
-        var errorDescription: String? { "You appear to be offline. Check your connection and try again." }
-    }
-    return ErrorView(error: PreviewError()) {}
+    ErrorView(error: PreviewError(message: "You appear to be offline. Check your connection and try again.")) {}
 }
 
 #Preview("Server") {
-    struct PreviewError: LocalizedError {
-        var errorDescription: String? { "The server could not be reached (HTTP 503)." }
-    }
-    return ErrorView(error: PreviewError()) {}
+    ErrorView(error: PreviewError(message: "The server could not be reached (HTTP 503).")) {}
 }
