@@ -4,26 +4,22 @@ import Testing
 
 @Suite(.timeLimit(.minutes(1)))
 struct InMemoryFeedRepositoryTests {
-    @Test func replaysTheCachedFeedThenTheScriptedSnapshot() async {
-        let stale = FeedSnapshot(feed: feed, freshness: .stale(.network(.httpStatus(500))))
+    @Test func replaysTheCachedFeedThenTheScriptedRefresh() async {
+        let result = await InMemoryFeedRepository(cached: feed, refresh: .unchanged).load()
 
-        let result = await InMemoryFeedRepository(cached: feed, snapshot: stale).load()
-
-        #expect(result == .success([FeedSnapshot(feed: feed, freshness: .cached), stale]))
+        #expect(result == FeedLoad(cached: feed, refresh: .success(.unchanged)))
     }
 
-    @Test func withoutACachedFeedReplaysOnlyTheScriptedSnapshot() async {
-        let current = FeedSnapshot(feed: feed, freshness: .current)
+    @Test func withoutACachedFeedReplaysOnlyTheScriptedRefresh() async {
+        let result = await InMemoryFeedRepository(refresh: .updated(feed)).load()
 
-        let result = await InMemoryFeedRepository(snapshot: current).load()
-
-        #expect(result == .success([current]))
+        #expect(result == FeedLoad(cached: nil, refresh: .success(.updated(feed))))
     }
 
-    @Test func replaysTheScriptedFailure() async {
-        let result = await InMemoryFeedRepository(error: .decoding("bad")).load()
+    @Test func replaysTheScriptedFailureBesideTheCachedFeed() async {
+        let result = await InMemoryFeedRepository(cached: feed, error: .decoding("bad")).load()
 
-        #expect(result == .failure(.decoding("bad")))
+        #expect(result == FeedLoad(cached: feed, refresh: .failure(.decoding("bad"))))
     }
 
     private let feed = try! JSONDecoder().decode(Feed.self, from: Data(#"{"version": "v1", "devices": []}"#.utf8))

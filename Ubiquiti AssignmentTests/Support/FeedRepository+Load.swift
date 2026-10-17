@@ -1,19 +1,21 @@
 import Foundation
 @testable import Ubiquiti_Assignment
 
+/// What one load produced: the cached feed, if any, and how the refresh ended.
+struct FeedLoad: Equatable {
+    let cached: Feed?
+    let refresh: Result<FeedRefresh, FeedError>
+}
+
 extension FeedRepository {
-    /// One load as the view model runs it: the cached snapshot when there is one, then the refresh. Collected into
-    /// a list so a test asserts order and count in one expression, or the failure that ended the load.
-    func load() async -> Result<[FeedSnapshot], FeedError> {
-        var snapshots: [FeedSnapshot] = []
-        if let cached = await cachedSnapshot() {
-            snapshots.append(cached)
-        }
+    /// One load as the view model runs it: the cached feed, then the refresh. Collected into one value so a test
+    /// asserts both in one expression.
+    func load() async -> FeedLoad {
+        let cached = await cachedFeed()
         do {
-            try await snapshots.append(refresh())
+            return try await FeedLoad(cached: cached, refresh: .success(refresh()))
         } catch {
-            return .failure(error)
+            return FeedLoad(cached: cached, refresh: .failure(error))
         }
-        return .success(snapshots)
     }
 }
