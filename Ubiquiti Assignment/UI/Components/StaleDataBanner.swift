@@ -30,9 +30,14 @@ struct StaleDataBanner: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
             if let retry {
-                Button("Retry", action: retry)
-                    .textStyle(.caption)
-                    .buttonStyle(.borderless)
+                Button(action: retry) {
+                    // The frame sits inside the label because a borderless button only takes taps on its label.
+                    Text("Retry")
+                        .frame(minWidth: Metrics.minimumTapTarget, minHeight: Metrics.minimumTapTarget)
+                        .contentShape(.rect)
+                }
+                .textStyle(.caption)
+                .buttonStyle(.borderless)
             }
         }
         .padding(.horizontal, Spacing.large)
