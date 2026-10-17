@@ -13,7 +13,4 @@ enum Spacing {
 
     /// 16pt: screen edge and row inset.
     static let large: CGFloat = 16
-
-    /// 24pt: breathing room between stacked blocks in the state views (one body line height in Figma).
-    static let xLarge: CGFloat = 24
 }

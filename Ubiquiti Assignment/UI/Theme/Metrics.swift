@@ -14,6 +14,6 @@ enum Metrics {
     /// Apple's minimum tap target, and the Figma toolbar button size.
     static let minimumTapTarget: CGFloat = 44
 
-    /// Width of a bordered line, such as the stale-data banner's edge.
-    static let hairline: CGFloat = 1
+    /// Horizontal inset of a tab label inside the tab bar.
+    static let tabLabelInset: CGFloat = 18
 }

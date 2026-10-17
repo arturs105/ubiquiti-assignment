@@ -22,14 +22,7 @@ struct EmptyStateView: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label {
-                Text(title)
-                    .textStyle(.bodyBold)
-                    .foregroundStyle(.foregroundPrimary)
-            } icon: {
-                Image(systemName: systemImage)
-                    .foregroundStyle(.foregroundTertiary)
-            }
+            StateLabel(title: title, systemImage: systemImage, tint: .foregroundTertiary)
         } description: {
             Text(message)
                 .textStyle(.body)

@@ -4,10 +4,14 @@ import SwiftUI
 ///
 /// Non-blocking by design: the cached content stays on screen and the banner carries the Retry instead.
 struct StaleDataBanner: View {
+    private let message: LocalizedStringResource
     private let retry: (() -> Void)?
 
-    /// - Parameter retry: Runs when the user taps Retry. Pass `nil` while a refresh is already in flight.
-    init(retry: (() -> Void)? = nil) {
+    /// - Parameters:
+    ///   - message: What is stale and why, in one line.
+    ///   - retry: Runs when the user taps Retry. Pass `nil` while a refresh is already in flight.
+    init(message: LocalizedStringResource = "Showing saved products. Couldn’t refresh.", retry: (() -> Void)? = nil) {
+        self.message = message
         self.retry = retry
     }
 
@@ -15,13 +19,16 @@ struct StaleDataBanner: View {
 
     var body: some View {
         HStack(spacing: Spacing.small) {
-            Image(systemName: "wifi.slash")
-                .foregroundStyle(.foregroundTertiary)
-                .accessibilityHidden(true)
-            Text("Showing saved products. Couldn’t refresh.")
-                .textStyle(.caption)
-                .foregroundStyle(.foregroundSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: Spacing.small) {
+                Image(systemName: "wifi.slash")
+                    .foregroundStyle(.foregroundTertiary)
+                    .accessibilityHidden(true)
+                Text(message)
+                    .textStyle(.caption)
+                    .foregroundStyle(.foregroundSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
             if let retry {
                 Button("Retry", action: retry)
                     .textStyle(.caption)
@@ -31,7 +38,6 @@ struct StaleDataBanner: View {
         .padding(.horizontal, Spacing.large)
         .frame(minHeight: Metrics.minimumTapTarget)
         .background(.backgroundPrimary, in: .rect(cornerRadius: Metrics.rowCornerRadius))
-        .accessibilityElement(children: .combine)
     }
 }
 

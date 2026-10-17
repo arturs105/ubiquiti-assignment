@@ -8,7 +8,8 @@ struct ErrorView: View {
     private let retry: () -> Void
 
     /// - Parameters:
-    ///   - error: Supplies the message through `errorDescription`.
+    ///   - error: Supplies the message through `localizedDescription`, which `LocalizedError` fills from
+    ///     `errorDescription`.
     ///   - retry: Runs when the user taps Retry.
     init(error: any LocalizedError, retry: @escaping () -> Void) {
         self.error = error
@@ -19,16 +20,9 @@ struct ErrorView: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label {
-                Text("Something went wrong")
-                    .textStyle(.bodyBold)
-                    .foregroundStyle(.foregroundPrimary)
-            } icon: {
-                Image(systemName: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
-            }
+            StateLabel(title: "Something went wrong", systemImage: "exclamationmark.triangle", tint: .red)
         } description: {
-            Text(error.errorDescription ?? error.localizedDescription)
+            Text(error.localizedDescription)
                 .textStyle(.body)
                 .foregroundStyle(.foregroundPrimary)
         } actions: {
