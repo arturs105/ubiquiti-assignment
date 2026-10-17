@@ -12,7 +12,7 @@ final class CachedFeedRepositoryTests {
     @Test func noCacheAndANewFeedYieldsOneCurrentSnapshotAndWritesBothFiles() async throws {
         let repository = repository(.success(.updated(data: v1, validators: validators1)))
 
-        let result = await repository.feed().emissions()
+        let result = await repository.load()
 
         #expect(try result == .success([FeedSnapshot(feed: feed(v1), freshness: .current)]))
         #expect(try cachedBytes() == v1)
@@ -23,7 +23,7 @@ final class CachedFeedRepositoryTests {
         try seed(bytes: v1, validators: validators1)
         let repository = repository(.success(.unchanged))
 
-        let result = await repository.feed().emissions()
+        let result = await repository.load()
 
         let cached = try feed(v1)
         #expect(result == .success([
@@ -38,7 +38,7 @@ final class CachedFeedRepositoryTests {
         try seed(bytes: v1, validators: validators1)
         let repository = repository(.success(.updated(data: v2, validators: validators2)))
 
-        let result = await repository.feed().emissions()
+        let result = await repository.load()
 
         #expect(try result == .success([
             FeedSnapshot(feed: feed(v1), freshness: .cached),
@@ -52,7 +52,7 @@ final class CachedFeedRepositoryTests {
         try seed(bytes: v1, validators: validators1)
         let repository = repository(.success(.updated(data: v1Reissued, validators: validators2)))
 
-        let result = await repository.feed().emissions()
+        let result = await repository.load()
 
         let held = try feed(v1)
         #expect(result == .success([
@@ -67,7 +67,7 @@ final class CachedFeedRepositoryTests {
         try seed(bytes: v1, validators: validators1)
         let repository = repository(.failure(.network(URLError(.notConnectedToInternet))))
 
-        let result = await repository.feed().emissions()
+        let result = await repository.load()
 
         let cached = try feed(v1)
         #expect(result == .success([
@@ -81,7 +81,7 @@ final class CachedFeedRepositoryTests {
     @Test func noCacheAndAFailedFetchFailsWithTheNetworkError() async {
         let repository = repository(.failure(.httpStatus(503)))
 
-        let result = await repository.feed().emissions()
+        let result = await repository.load()
 
         #expect(result == .failure(.network(.httpStatus(503))))
         #expect(FileManager.default.fileExists(atPath: directory.path) == false)
@@ -92,7 +92,7 @@ final class CachedFeedRepositoryTests {
         try seed(bytes: v1, validators: validators1)
         let repository = repository(.success(.updated(data: Data("<html>".utf8), validators: validators2)))
 
-        let result = await repository.feed().emissions()
+        let result = await repository.load()
 
         let cached = try feed(v1)
         let snapshots = try result.get()
@@ -110,7 +110,7 @@ final class CachedFeedRepositoryTests {
     @Test func noCacheAndUndecodableBytesFailsWithTheDecodingErrorAndWritesNothing() async {
         let repository = repository(.success(.updated(data: Data("<html>".utf8), validators: validators2)))
 
-        let result = await repository.feed().emissions()
+        let result = await repository.load()
 
         guard case .failure(.decoding) = result else {
             Issue.record("Expected a decoding failure, got \(result)")
@@ -123,7 +123,7 @@ final class CachedFeedRepositoryTests {
         try seed(bytes: v1, validators: nil)
         let client = RecordingFeedClient(result: .success(.updated(data: v2, validators: validators2)))
 
-        let result = await repository(client).feed().emissions()
+        let result = await repository(client).load()
 
         #expect(client.receivedValidators == [.empty])
         #expect(try result == .success([
@@ -136,7 +136,7 @@ final class CachedFeedRepositoryTests {
         try seed(bytes: v1, validators: validators1)
         let client = RecordingFeedClient(result: .success(.unchanged))
 
-        _ = await repository(client).feed().emissions()
+        _ = await repository(client).load()
 
         #expect(client.receivedValidators == [validators1])
     }
@@ -145,7 +145,7 @@ final class CachedFeedRepositoryTests {
         try seed(bytes: nil, validators: validators1)
         let client = RecordingFeedClient(result: .failure(.httpStatus(500)))
 
-        let result = await repository(client).feed().emissions()
+        let result = await repository(client).load()
 
         #expect(client.receivedValidators == [.empty])
         #expect(result == .failure(.network(.httpStatus(500))))
@@ -157,7 +157,7 @@ final class CachedFeedRepositoryTests {
         try seed(bytes: bytes, validators: validators1)
         let client = RecordingFeedClient(result: .failure(.httpStatus(500)))
 
-        let result = await repository(client).feed().emissions()
+        let result = await repository(client).load()
 
         #expect(client.receivedValidators == [.empty])
         #expect(result == .failure(.network(.httpStatus(500))))
@@ -174,7 +174,7 @@ final class CachedFeedRepositoryTests {
         )
         let client = RecordingFeedClient(result: .failure(.httpStatus(500)))
 
-        let result = await repository(client).feed().emissions()
+        let result = await repository(client).load()
 
         #expect(client.receivedValidators == [.empty])
         #expect(result == .failure(.network(.httpStatus(500))))
@@ -186,19 +186,19 @@ final class CachedFeedRepositoryTests {
         try seed(bytes: v1, validators: validators1)
         let client = RecordingFeedClient(result: .success(.unchanged))
 
-        let result = await repository(client).feed().emissions()
+        let result = await repository(client).load()
 
         #expect(client.receivedValidators == [validators1])
         #expect(try result.get().first?.feed.products.isEmpty == true)
     }
 
-    @Test func aSecondSubscriptionServesTheCachedFeedFromMemoryNotDisk() async throws {
+    @Test func aSecondLoadServesTheCachedFeedFromMemoryNotDisk() async throws {
         try seed(bytes: v1, validators: validators1)
         let repository = repository(.failure(.httpStatus(500)))
-        _ = await repository.feed().emissions()
+        _ = await repository.load()
         try FileManager.default.removeItem(at: directory)
 
-        let result = await repository.feed().emissions()
+        let result = await repository.load()
 
         let cached = try feed(v1)
         #expect(result == .success([
@@ -207,12 +207,12 @@ final class CachedFeedRepositoryTests {
         ]))
     }
 
-    @Test func aSecondSubscriptionSendsTheValidatorsOfTheLastDownload() async {
+    @Test func aSecondLoadSendsTheValidatorsOfTheLastDownload() async {
         let client = RecordingFeedClient(result: .success(.updated(data: v1, validators: validators1)))
         let repository = repository(client)
-        _ = await repository.feed().emissions()
+        _ = await repository.load()
 
-        _ = await repository.feed().emissions()
+        _ = await repository.load()
 
         #expect(client.receivedValidators == [.empty, validators1])
     }
@@ -221,9 +221,29 @@ final class CachedFeedRepositoryTests {
         // The real client never answers unchanged to an unconditional request; the repository treats it the same way.
         let repository = repository(.success(.unchanged))
 
-        let result = await repository.feed().emissions()
+        let result = await repository.load()
 
         #expect(result == .failure(.network(.httpStatus(304))))
+    }
+
+    @Test func refreshWithoutAskingForTheCachedSnapshotStillLoadsTheCache() async throws {
+        // Pull to refresh calls refresh() alone; the validators and the stale fallback must not depend on
+        // cachedSnapshot() having run first.
+        try seed(bytes: v1, validators: validators1)
+        let client = RecordingFeedClient(result: .failure(.httpStatus(500)))
+
+        let snapshot = try await repository(client).refresh()
+
+        #expect(client.receivedValidators == [validators1])
+        #expect(try snapshot == FeedSnapshot(feed: feed(v1), freshness: .stale(.network(.httpStatus(500)))))
+    }
+
+    @Test func refreshWithoutACacheAndAFailedFetchThrows() async {
+        let repository = repository(.failure(.httpStatus(503)))
+
+        await #expect(throws: FeedError.network(.httpStatus(503))) {
+            try await repository.refresh()
+        }
     }
 
     /// A directory of its own per test, so Swift Testing's parallel execution never shares a cache.

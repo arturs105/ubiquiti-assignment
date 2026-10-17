@@ -1,7 +1,8 @@
 import Foundation
 import OSLog
 
-/// The two cache files: `feed.json`, the downloaded bytes verbatim, and `validators.json` beside them.
+/// The two cache files: `feed.json`, the downloaded bytes verbatim, and `validators.json` beside them. Every
+/// method here runs on the actor, so reads and writes never interleave.
 extension CachedFeedRepository {
     /// The pair on disk, or `nil` after recovering from whatever is wrong with it. Missing validators are not
     /// wrong: the feed loads and the next request is unconditional. A missing, unreadable or undecodable feed is:

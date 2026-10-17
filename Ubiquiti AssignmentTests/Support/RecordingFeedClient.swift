@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import Synchronization
 @testable import Ubiquiti_Assignment
@@ -21,8 +20,8 @@ final nonisolated class RecordingFeedClient: FeedClient, Sendable {
 
     // MARK: - FeedClient
 
-    func fetch(validators: Validators) -> AnyPublisher<FeedResponse, NetworkError> {
+    func fetch(validators: Validators) async throws(NetworkError) -> FeedResponse {
         received.withLock { $0.append(validators) }
-        return client.fetch(validators: validators)
+        return try await client.fetch(validators: validators)
     }
 }

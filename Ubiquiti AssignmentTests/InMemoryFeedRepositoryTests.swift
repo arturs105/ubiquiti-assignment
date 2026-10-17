@@ -4,19 +4,24 @@ import Testing
 
 @Suite(.timeLimit(.minutes(1)))
 struct InMemoryFeedRepositoryTests {
-    @Test func replaysTheScriptedSnapshotsInOrder() async {
-        let snapshots = [
-            FeedSnapshot(feed: feed, freshness: .cached),
-            FeedSnapshot(feed: feed, freshness: .stale(.network(.httpStatus(500)))),
-        ]
+    @Test func replaysTheCachedFeedThenTheScriptedSnapshot() async {
+        let stale = FeedSnapshot(feed: feed, freshness: .stale(.network(.httpStatus(500))))
 
-        let result = await InMemoryFeedRepository(snapshots: snapshots).feed().emissions()
+        let result = await InMemoryFeedRepository(cached: feed, snapshot: stale).load()
 
-        #expect(result == .success(snapshots))
+        #expect(result == .success([FeedSnapshot(feed: feed, freshness: .cached), stale]))
+    }
+
+    @Test func withoutACachedFeedReplaysOnlyTheScriptedSnapshot() async {
+        let current = FeedSnapshot(feed: feed, freshness: .current)
+
+        let result = await InMemoryFeedRepository(snapshot: current).load()
+
+        #expect(result == .success([current]))
     }
 
     @Test func replaysTheScriptedFailure() async {
-        let result = await InMemoryFeedRepository(error: .decoding("bad")).feed().emissions()
+        let result = await InMemoryFeedRepository(error: .decoding("bad")).load()
 
         #expect(result == .failure(.decoding("bad")))
     }
