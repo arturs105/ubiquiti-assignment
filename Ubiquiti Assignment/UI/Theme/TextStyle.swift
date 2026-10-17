@@ -9,7 +9,7 @@ enum TextStyle {
     /// `Mobile/16pt-SF-Pro`: row titles, detail labels, error copy.
     case body
 
-    /// `Mobile/16pt-SF-Pro-Bold`: navigation titles.
+    /// `Mobile/16pt-SF-Pro-Bold`: state view headlines (`StateLabel`).
     case bodyBold
 
     /// `Mobile/12pt-SF-Pro`: row subtitles.
