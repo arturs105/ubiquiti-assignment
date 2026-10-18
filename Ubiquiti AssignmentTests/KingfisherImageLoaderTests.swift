@@ -144,13 +144,25 @@ final class KingfisherImageLoaderTests {
         }
     }
 
-    /// Polls until a file appears under the cache directory, bounded by the suite's time limit.
+    /// Polls until a cache file is complete, bounded by the suite's time limit.
     private func waitForCacheFile() async throws {
-        while try FileManager.default.subpathsOfDirectory(atPath: directory.path())
-            .contains(where: { $0.contains("/") }) == false
-        {
+        while try hasCompleteCacheFile() == false {
             try await Task.sleep(for: Constants.pollInterval)
         }
+    }
+
+    /// Kingfisher writes the bytes first and only then sets the file's modification date to its expiry date; a read
+    /// in between is a disk miss. So a file counts once that date is in the future. Files sit in a subfolder named
+    /// after the cache, hence the `/`: the subfolder itself is not a file.
+    private func hasCompleteCacheFile() throws -> Bool {
+        let fileManager = FileManager.default
+        return try fileManager.subpathsOfDirectory(atPath: directory.path())
+            .filter { $0.contains("/") }
+            .contains { path in
+                let attributes = try? fileManager.attributesOfItem(atPath: directory.appending(path: path).path())
+                guard let expiry = attributes?[.modificationDate] as? Date else { return false }
+                return expiry > .now
+            }
     }
 }
 
