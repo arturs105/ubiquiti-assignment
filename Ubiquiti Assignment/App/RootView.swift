@@ -6,8 +6,7 @@ import SwiftUI
 /// receive their view model by initialiser and know nothing about the stack; see the SwiftUI section of
 /// `docs/CODING_STANDARDS.md`.
 struct RootView: View {
-    /// Unread while the screens are placeholders: #8 builds the list view model from it here, #11 the details one
-    /// in `destination(for:)`.
+    /// #11 builds the details view model from it in `destination(for:)`.
     private let dependencies: Dependencies
     @State private var path: [Route] = []
 
@@ -20,7 +19,7 @@ struct RootView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ProductListView()
+            ProductListView(viewModel: ProductListViewModel(repository: dependencies.feedRepository))
                 .navigationDestination(for: Route.self, destination: destination)
         }
     }
