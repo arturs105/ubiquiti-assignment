@@ -39,7 +39,9 @@ make lint     # dry run, exits non-zero on any diff
 
 ## Assumptions and tradeoffs
 
-_To be distilled from `docs/DECISIONS.md` before submission._
+- Dark mode isn't supported since there are no desings for it. [ColorTokensKit](https://github.com/metasidd/ColorTokensKit-Swift) was considered for calculating dark mode colors, but that's probably an overkill for a home assignment.
+
+_More to be distilled from `docs/DECISIONS.md` before submission._
 
 ## Libraries used and why
 
