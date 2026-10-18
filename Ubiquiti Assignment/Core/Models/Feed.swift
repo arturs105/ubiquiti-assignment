@@ -6,7 +6,8 @@ import OSLog
 /// Decoding is lenient: a structurally broken product is dropped and logged with its index, so one bad record never
 /// blanks the catalogue. See `docs/DECISIONS.md`, "Lenient feed decoding".
 nonisolated struct Feed: Codable, Hashable, Identifiable, Sendable {
-    /// Opaque fingerprint of the feed contents; caching compares it to detect a changed feed.
+    /// Opaque fingerprint of the feed contents, and the feed's whole identity: two feeds with the same version are the
+    /// same document, so the view model compares versions, not contents, to tell a changed feed from a reissue.
     let version: String
     let products: [Product]
 
