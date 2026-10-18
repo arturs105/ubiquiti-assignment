@@ -51,6 +51,9 @@ struct ProductRow: View {
 
 #Preview("Failed") {
     List(Product.previews) { product in
-        ProductRow(product: product, imageLoader: InMemoryImageLoader(error: .network(.httpStatus(403))))
+        ProductRow(
+            product: product,
+            imageLoader: InMemoryImageLoader(error: .network(.httpStatus(HTTPStatus.forbidden))),
+        )
     }
 }

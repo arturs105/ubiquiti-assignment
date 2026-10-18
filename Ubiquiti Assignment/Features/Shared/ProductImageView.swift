@@ -58,7 +58,7 @@ struct ProductImageView: View {
     ProductImageView(viewModel: ProductImageViewModel(
         product: Product.previews[0],
         size: .thumbnail,
-        loader: InMemoryImageLoader(error: .network(.httpStatus(403))),
+        loader: InMemoryImageLoader(error: .network(.httpStatus(HTTPStatus.forbidden))),
     ))
     .frame(width: Metrics.thumbnail, height: Metrics.thumbnail)
 }
