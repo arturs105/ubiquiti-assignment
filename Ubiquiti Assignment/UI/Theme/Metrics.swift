@@ -5,8 +5,11 @@ enum Metrics {
     /// Product thumbnail in a list row.
     static let thumbnail: CGFloat = 28
 
-    /// Height of a product row and a detail row.
+    /// Height of a product row in the list.
     static let rowHeight: CGFloat = 48
+
+    /// Height of an attribute row on the details screen.
+    static let detailRowHeight: CGFloat = 44
 
     /// `UI Globals/radius-row`: corner radius of a grouped row block.
     static let rowCornerRadius: CGFloat = 10

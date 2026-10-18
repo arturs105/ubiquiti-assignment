@@ -37,13 +37,9 @@ struct ProductListContent: View {
             NavigationLink(value: Route.product(product.id)) {
                 ProductRow(product: product)
             }
-            .listRowInsets(EdgeInsets(top: 0, leading: Spacing.large, bottom: 0, trailing: Spacing.large))
-            .listRowBackground(Color.backgroundPrimary)
+            .insetGroupedRow()
         }
-        .listStyle(.insetGrouped)
-        .contentMargins(.horizontal, Spacing.large, for: .scrollContent)
-        .scrollContentBackground(.hidden)
-        .background(.backgroundSecondary)
+        .insetGroupedScreen()
         .refreshable(action: refresh)
         .safeAreaInset(edge: .top) {
             if isStale {
