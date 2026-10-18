@@ -49,7 +49,7 @@ final nonisolated class InMemoryImageLoader: ImageLoader, Sendable {
     func image(for product: Product, size: ImageSize) async throws(ImageError) -> UIImage {
         recorded.withLock { $0.append(Request(productID: product.id, size: size)) }
         guard let result = overrides[product.id] ?? answer else {
-            try await waitForCancellation()
+            await waitForCancellation()
             throw .cancelled
         }
         return try result.get()
@@ -57,15 +57,11 @@ final nonisolated class InMemoryImageLoader: ImageLoader, Sendable {
 
     // MARK: - Private helpers
 
-    /// Suspends until the current task is cancelled, as a download that never completes would.
-    private func waitForCancellation() async throws(ImageError) {
-        while Task.isCancelled == false {
-            do {
-                try await Task.sleep(for: .milliseconds(10))
-            } catch {
-                throw .cancelled
-            }
-        }
-        throw .cancelled
+    /// Suspends until the current task is cancelled, as a download that never completes would. A stream that never
+    /// yields ends its iteration only on cancellation, so nothing wakes before then.
+    private func waitForCancellation() async {
+        let (stream, continuation) = AsyncStream<Never>.makeStream()
+        for await _ in stream {}
+        continuation.finish()
     }
 }

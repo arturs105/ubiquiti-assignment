@@ -41,6 +41,10 @@ struct InMemoryImageLoaderTests {
         let task = Task {
             try await loader.image(for: product, size: .thumbnail)
         }
+        // Cancel a call that is waiting, not a task that has not started, so a `pending` that threw at once fails.
+        while loader.requests.isEmpty {
+            await Task.yield()
+        }
         task.cancel()
 
         await #expect(throws: ImageError.cancelled) {
