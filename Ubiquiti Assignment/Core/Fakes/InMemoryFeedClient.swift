@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 /// A `FeedClient` that replays one scripted outcome, for tests and previews that must not touch the network.
@@ -21,7 +20,7 @@ nonisolated struct InMemoryFeedClient: FeedClient {
 
     // MARK: - FeedClient
 
-    func fetch(validators _: Validators) -> AnyPublisher<FeedResponse, NetworkError> {
-        result.publisher.eraseToAnyPublisher()
+    func fetch(validators _: Validators) async throws(NetworkError) -> FeedResponse {
+        try result.get()
     }
 }
