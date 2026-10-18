@@ -14,7 +14,7 @@ struct StaleDataBanner: View {
     init(
         message: LocalizedStringResource = "Showing saved products. Couldn’t refresh.",
         isLoading: Bool = false,
-        retry: (() -> Void)? = nil
+        retry: (() -> Void)? = nil,
     ) {
         self.message = message
         self.isLoading = isLoading
@@ -58,7 +58,7 @@ struct StaleDataBanner: View {
         }
     }
 
-    func retryButton( _ retry: @escaping () -> Void) -> some View {
+    func retryButton(_ retry: @escaping () -> Void) -> some View {
         Button(action: retry) {
             // The frame sits inside the label because a borderless button only takes taps on its label.
             Text("Retry")
