@@ -27,7 +27,6 @@ struct ProductDetailView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.backgroundSecondary)
         .navigationTitle("Details")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

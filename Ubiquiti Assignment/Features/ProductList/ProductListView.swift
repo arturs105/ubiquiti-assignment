@@ -8,7 +8,7 @@ struct ProductListView: View {
     var body: some View {
         List(Constants.placeholderIDs, id: \.self) { id in
             NavigationLink(value: Route.product(id)) {
-                Text("Product \(id.uuidString.prefix(Constants.idPrefixLength))")
+                Text(verbatim: String(id.uuidString.prefix(Constants.idPrefixLength)))
                     .textStyle(.body)
                     .foregroundStyle(.foregroundPrimary)
             }

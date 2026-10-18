@@ -1,12 +1,14 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Details": {},
     "Fetching details": {},
     "Fetching products": {},
-    "Hello, world!": {},
     "No cameras": {},
     "No products": {},
     "Nothing in this category yet. Try another tab.": {},
+    "Product details": {},
+    "Products": {},
     "Retry": {},
     "Showing saved products. Couldn’t refresh.": {},
     "Something went wrong": {},
