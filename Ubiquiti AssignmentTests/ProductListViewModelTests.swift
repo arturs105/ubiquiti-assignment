@@ -79,6 +79,20 @@ struct ProductListViewModelTests {
         await viewModel.refresh()
 
         #expect(await settles(viewModel, at: .empty))
+        #expect(viewModel.isCatalogueEmpty)
+    }
+
+    @Test func anEmptyCatalogueIsEmptyOnEveryTab() async {
+        // The screen must not suggest another tab when every tab is empty.
+        let empty = Feed(version: "empty", products: [])
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .updated(empty)))
+        viewModel.select(category: .cameras)
+
+        viewModel.load()
+        await viewModel.refresh()
+
+        #expect(await settles(viewModel, at: .empty))
+        #expect(viewModel.isCatalogueEmpty)
     }
 
     @Test func placeholderProductsAreShownLikeAnyOther() async {
@@ -95,7 +109,7 @@ struct ProductListViewModelTests {
         // Through the view model, no feed and a failure is `.failed` too, so a state reached before the cached feed
         // lands would pass without exercising this mapping; the mapping is asserted on its own instead.
         let empty = Feed(version: "empty", products: [])
-        let state = ProductListViewModel.state(feed: empty, isRefreshing: false, failure: offline)
+        let state = ProductListViewModel.state(feed: empty, category: .all, isRefreshing: false, failure: offline)
 
         #expect(state == .failed(offline))
     }
@@ -158,6 +172,71 @@ struct ProductListViewModelTests {
 
         #expect(await settles(viewModel) { $0.state == .loaded(Product.previews) && !$0.isRefreshing })
         #expect(await repository.refreshCount == 1)
+    }
+
+    @Test func startsOnTheAllTab() {
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .unchanged))
+
+        #expect(viewModel.selectedCategory == .all)
+    }
+
+    @Test func selectingATabFiltersTheListAtOnce() async {
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        viewModel.load()
+        await viewModel.refresh()
+        #expect(await settles(viewModel, at: .loaded(Product.previews)))
+
+        viewModel.select(category: .cameras)
+
+        // No `settles`: the tab is an input the pipeline answers synchronously, so the list never lags the tap.
+        #expect(viewModel.selectedCategory == .cameras)
+        #expect(viewModel.state == .loaded([Product.previews[0]]))
+
+        viewModel.select(category: .iot)
+        #expect(viewModel.state == .loaded([Product.previews[2]]))
+
+        viewModel.select(category: .all)
+        #expect(viewModel.state == .loaded(Product.previews))
+    }
+
+    @Test func aTabWithNoProductsIsEmptyWhileTheCatalogueIsNot() async {
+        let networkOnly = Feed(version: "network", products: [Product.previews[1]])
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(
+            cached: networkOnly,
+            refresh: .unchanged,
+        ))
+        viewModel.load()
+        await viewModel.refresh()
+        #expect(await settles(viewModel, at: .loaded([Product.previews[1]])))
+
+        viewModel.select(category: .cameras)
+
+        #expect(viewModel.state == .empty)
+        #expect(viewModel.isCatalogueEmpty == false)
+    }
+
+    @Test func aTabWithNoProductsStaysEmptyWhenTheRefreshFailed() {
+        // The catalogue has rows, just none under this tab: the failure is not the state, the user can switch tabs.
+        let networkOnly = Feed(version: "network", products: [Product.previews[1]])
+        let state = ProductListViewModel.state(
+            feed: networkOnly,
+            category: .cameras,
+            isRefreshing: false,
+            failure: offline,
+        )
+
+        #expect(state == .empty)
+    }
+
+    @Test func aFeedArrivingLaterIsFilteredByTheSelectedTab() async {
+        let repository = InMemoryFeedRepository(refresh: .updated(.preview))
+        let viewModel = ProductListViewModel(repository: repository)
+        viewModel.select(category: .iot)
+
+        viewModel.load()
+        await viewModel.refresh()
+
+        #expect(await settles(viewModel, at: .loaded([Product.previews[2]])))
     }
 
     private let offline = FeedError.network(.network(URLError(.notConnectedToInternet)))

@@ -1,16 +1,20 @@
 import Combine
 import Foundation
 
-/// State and intents of the product list: the feed as a list of products, kept on screen across refreshes.
+/// State and intents of the product list: the feed filtered by the selected tab, kept on screen across refreshes.
 ///
-/// Inputs enter as subjects: the feed the repository streams, whether a refresh is in flight, and how the last
-/// refresh ended. The screen state is a `CombineLatest` over the three and the stale error over two of them, so
-/// no intent method computes a state by hand; see the Concurrency and Combine section of `docs/CODING_STANDARDS.md`.
-/// `init` only wires the pipeline; `load()` starts the subscription and the first refresh.
+/// Inputs enter as subjects: the feed the repository streams, the selected category, whether a refresh is in
+/// flight, and how the last refresh ended. The screen state is a `CombineLatest` over the four and the stale error
+/// over two of them, so no intent method computes a state by hand; see the Concurrency and Combine section of
+/// `docs/CODING_STANDARDS.md`. `init` only wires the pipeline; `load()` starts the subscription and the first refresh.
 @Observable
 final class ProductListViewModel {
-    /// What the screen shows.
+    /// What the screen shows: the products under the selected tab.
     private(set) var state: LoadState<[Product]> = .loading
+    /// The tab the list is filtered by.
+    private(set) var selectedCategory: ProductCategory = .all
+    /// The feed on screen has no products at all, so an `empty` state is the catalogue's, not the tab's.
+    private(set) var isCatalogueEmpty = false
     /// Why the list on screen is stale: the refresh behind it failed. `nil` while the list has no rows, since the
     /// failure is then the state itself.
     private(set) var staleError: FeedError?
@@ -19,6 +23,7 @@ final class ProductListViewModel {
 
     private let repository: any FeedRepository
     private let feedSubject = CurrentValueSubject<Feed?, Never>(nil)
+    private let categorySubject = CurrentValueSubject<ProductCategory, Never>(.all)
     private let refreshingSubject = CurrentValueSubject<Bool, Never>(false)
     private let refreshFailureSubject = CurrentValueSubject<FeedError?, Never>(nil)
     // Plumbing, not state a view reads: kept out of observation so a task swap never invalidates a view.
@@ -30,8 +35,9 @@ final class ProductListViewModel {
     init(repository: any FeedRepository) {
         self.repository = repository
 
-        Publishers.CombineLatest3(
+        Publishers.CombineLatest4(
             feedSubject.removeDuplicates { $0?.version == $1?.version },
+            categorySubject,
             refreshingSubject,
             refreshFailureSubject,
         )
@@ -39,6 +45,17 @@ final class ProductListViewModel {
         .removeDuplicates()
         .sink { [weak self] state in self?.state = state }
         .store(in: &cancellables)
+
+        categorySubject
+            .removeDuplicates()
+            .sink { [weak self] category in self?.selectedCategory = category }
+            .store(in: &cancellables)
+
+        feedSubject
+            .map { $0?.products.isEmpty ?? false }
+            .removeDuplicates()
+            .sink { [weak self] isEmpty in self?.isCatalogueEmpty = isEmpty }
+            .store(in: &cancellables)
 
         Publishers.CombineLatest(feedSubject, refreshFailureSubject)
             .map { feed, failure in (feed?.products.isEmpty ?? true) ? nil : failure }
@@ -82,6 +99,11 @@ final class ProductListViewModel {
         startRefresh()
     }
 
+    /// Filters the list by `category`. The pipeline answers synchronously, so the list changes with the tap.
+    func select(category: ProductCategory) {
+        categorySubject.send(category)
+    }
+
     // MARK: - Private helpers
 
     /// The refresh in flight, or a new one when none is.
@@ -111,9 +133,17 @@ final class ProductListViewModel {
 
     /// The state pipeline's `map`, internal so tests can pin a mapping whose inputs arrive through two tasks in an
     /// order the scheduler picks.
-    static func state(feed: Feed?, isRefreshing: Bool, failure: FeedError?) -> LoadState<[Product]> {
-        let products = feed?.products ?? []
+    static func state(
+        feed: Feed?,
+        category: ProductCategory,
+        isRefreshing: Bool,
+        failure: FeedError?,
+    ) -> LoadState<[Product]> {
+        let catalogue = feed?.products ?? []
+        let products = catalogue.filter(category.contains)
         guard products.isEmpty else { return .loaded(products) }
+        // Rows exist, just none under this tab: the user switches tabs, and a failed refresh has nothing to add.
+        guard catalogue.isEmpty else { return .empty }
         // No rows to keep on screen, cached or not: the failure is the state until a retry is under way, which
         // reads as loading again. An empty list over a failed refresh would claim the catalogue is empty.
         if let failure {
