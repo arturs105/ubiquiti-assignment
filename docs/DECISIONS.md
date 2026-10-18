@@ -264,7 +264,7 @@ Memory stays on Kingfisher's defaults (5 minutes, a quarter of physical memory, 
 
 ## 2026-10-18 Second force unwrap: the image service URL literal
 
-`Product.Constants.imageService` is `URL(string: "https://images.svc.ui.com/")!`, the second accepted force unwrap on a compile-time literal beside the feed URL, with the same guard: a test evaluates it on every run. Why: `URLComponents.url` is optional too, and a non-optional `imageURL(size:)` was decided on 2026-10-15; the literal is the one place the optionality can be discharged honestly.
+`Product.Constants.imageService` is `URL(string: "https://images.svc.ui.com/")!`, the second accepted force unwrap on a compile-time literal beside the feed URL, with the same guard: a test evaluates it on every run. Why: `URL(string:)` is optional, `URL.appending(queryItems:)` on a non-optional base is not, and a non-optional `imageURL(size:)` was decided on 2026-10-15; the literal is the one place the optionality can be discharged honestly.
 
 ## 2026-10-18 Native macOS dropped from the supported platforms
 
