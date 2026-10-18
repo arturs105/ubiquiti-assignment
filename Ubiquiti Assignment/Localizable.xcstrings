@@ -1,0 +1,16 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Fetching details": {},
+    "Fetching products": {},
+    "Hello, world!": {},
+    "No cameras": {},
+    "No products": {},
+    "Nothing in this category yet. Try another tab.": {},
+    "Retry": {},
+    "Showing saved products. Couldn’t refresh.": {},
+    "Something went wrong": {},
+    "The product list is empty.": {}
+  },
+  "version": "1.0"
+}

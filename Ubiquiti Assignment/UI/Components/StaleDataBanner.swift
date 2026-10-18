@@ -35,7 +35,7 @@ struct StaleDataBanner: View {
             if let retry {
                 Button(action: retry) {
                     // The frame sits inside the label because a borderless button only takes taps on its label.
-                    Text(ButtonTitle.retry)
+                    Text("Retry")
                         .frame(minWidth: Metrics.minimumTapTarget, minHeight: Metrics.minimumTapTarget)
                         .contentShape(.rect)
                 }
