@@ -10,15 +10,14 @@ MVVM, one `View` + one `ViewModel` per screen under `Features/<Screen>/`.
 - **View**: renders state, forwards intents. No networking, no business logic, no `Task {}` that does more than call an intent.
 - **Core**: pure Swift. Services are protocols (`FeedRepository`, `ImageLoader`) with one production implementation and one in-memory fake for tests and previews. Inject through initialisers, never through singletons or `@Environment`. Every Core type and protocol is declared `nonisolated`: the target defaults to `MainActor`, and networking, decoding and caching must run off the main actor. An `actor` is its own isolation and takes no modifier. Shared mutable state in Core (caches, stores) lives in an `actor`; `Mutex` is for `Sendable` wrappers that must stay synchronous, never a plain class. No `nonisolated(unsafe)`, no `@preconcurrency import`; if one is ever unavoidable, log it in `docs/DECISIONS.md`.
 
-Screen state is a single enum, so the view switches over it exhaustively:
+Screen state is a single enum, so the view switches over it exhaustively. No `idle`: the pipeline emits `loading` as soon as it is wired. `failed` carries `FeedError` until #15 lands `DisplayError` (see `docs/DECISIONS.md`, 2026-10-18).
 
 ```swift
-enum LoadState<Value> {
-    case idle
+enum LoadState<Value: Equatable>: Equatable {
     case loading
     case loaded(Value)
     case empty
-    case failed(DisplayError)
+    case failed(FeedError)
 }
 ```
 
