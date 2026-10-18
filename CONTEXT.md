@@ -32,7 +32,7 @@ What the server handed back with the last feed download so the app can ask wheth
 _Avoid_: Fingerprint, cache tag, revision
 
 **Unchanged**:
-The server's answer to a request carrying validators when the feed has not changed since. Nothing is downloaded; the stored feed stands.
+The server's answer to a request carrying validators when the feed has not changed since. Nothing is downloaded; the cached feed stands.
 _Avoid_: 304, not modified, cache hit
 
 **Cached feed**:
@@ -40,7 +40,7 @@ The last downloaded feed bytes kept on disk together with their validators. What
 _Avoid_: Store, cache (as a noun for the data)
 
 **Refresh outcome**:
-What the server said when asked for the feed: unchanged, or an updated feed that is now the cached feed. A refresh that fails has no outcome; the app keeps what it shows and calls it stale.
+What the server said when asked for the feed: unchanged, or an updated feed that is now the cached feed. The type is `FeedRefresh`. A refresh that fails has no outcome; the app keeps what it shows and calls it stale.
 _Avoid_: Snapshot, result, response
 
 **Stale**:
