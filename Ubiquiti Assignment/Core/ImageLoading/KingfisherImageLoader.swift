@@ -83,8 +83,8 @@ final nonisolated class KingfisherImageLoader: ImageLoader, Sendable {
             .network(.invalidResponse)
         default:
             // Undecodable bytes (`processorError`), a cache that could not hand the file back, a request Kingfisher
-            // refused: the screen shows the failure image for each, and the reason is in the log.
-            .invalidImage
+            // refused: the screen shows the failure image for each, and the reason travels with the error.
+            .invalidImage(error.localizedDescription)
         }
     }
 

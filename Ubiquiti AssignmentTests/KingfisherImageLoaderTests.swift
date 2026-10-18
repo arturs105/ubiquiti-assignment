@@ -94,9 +94,15 @@ final class KingfisherImageLoaderTests {
         let product = try Product.stub()
         StubURLProtocol.script(.http(status: 200, body: Data("not a png".utf8)), at: product.imageURL(size: .thumbnail))
 
-        await #expect(throws: ImageError.invalidImage) {
+        let error = await #expect(throws: ImageError.self) {
             try await loader().image(for: product, size: .thumbnail)
         }
+
+        guard case let .invalidImage(reason) = error else {
+            Issue.record("Expected an invalid image error, got \(String(describing: error))")
+            return
+        }
+        #expect(!reason.isEmpty)
     }
 
     @Test func cancellingTheAwaitingTaskReportsCancelled() async throws {

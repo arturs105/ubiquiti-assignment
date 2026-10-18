@@ -24,9 +24,12 @@ struct InMemoryImageLoaderTests {
     @Test func overrideBeatsTheDefaultForItsProduct() async throws {
         let product = try Product.stub()
         let image = UIImage.solid(.blue, size: .thumbnail)
-        let loader = InMemoryImageLoader(answer: .success(image), overrides: [product.id: .failure(.invalidImage)])
+        let loader = InMemoryImageLoader(
+            answer: .success(image),
+            overrides: [product.id: .failure(.invalidImage("not a png"))],
+        )
 
-        await #expect(throws: ImageError.invalidImage) {
+        await #expect(throws: ImageError.invalidImage("not a png")) {
             try await loader.image(for: product, size: .thumbnail)
         }
         let otherImage = try await loader.image(for: Product.stub(), size: .thumbnail)

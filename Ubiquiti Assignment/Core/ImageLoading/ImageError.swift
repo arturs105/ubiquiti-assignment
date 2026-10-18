@@ -5,8 +5,10 @@ nonisolated enum ImageError: Error, Equatable, Sendable {
     /// The download failed at the transport or HTTP level: offline, timed out, or the CDN answered with a status
     /// such as 403.
     case network(NetworkError)
-    /// Bytes arrived, or sat in the cache, but no image could be made of them. The underlying reason is logged.
-    case invalidImage
+    /// Bytes arrived, or sat in the cache, but no image could be made of them. Carries the underlying error's
+    /// description, a `String` so the enum stays `Equatable` for tests and the display mapper, as `FeedError`
+    /// does.
+    case invalidImage(String)
     /// The task awaiting the image was cancelled, typically because its row left the screen. Not a failure to show.
     case cancelled
 }
