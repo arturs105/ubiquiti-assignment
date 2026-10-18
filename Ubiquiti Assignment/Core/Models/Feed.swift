@@ -14,6 +14,12 @@ nonisolated struct Feed: Codable, Hashable, Identifiable, Sendable {
     /// Two feeds with the same fingerprint are the same document.
     var id: String { version }
 
+    /// Builds a feed directly, for previews and tests; the live feed always arrives through `init(from:)`.
+    init(version: String, products: [Product]) {
+        self.version = version
+        self.products = products
+    }
+
     // MARK: - Codable
 
     private enum CodingKeys: String, CodingKey {

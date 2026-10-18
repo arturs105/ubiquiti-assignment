@@ -10,15 +10,14 @@ MVVM, one `View` + one `ViewModel` per screen under `Features/<Screen>/`.
 - **View**: renders state, forwards intents. No networking, no business logic, no `Task {}` that does more than call an intent.
 - **Core**: pure Swift. Services are protocols (`FeedRepository`, `ImageLoader`) with one production implementation and one in-memory fake for tests and previews. Inject through initialisers, never through singletons or `@Environment`. Every Core type and protocol is declared `nonisolated`: the target defaults to `MainActor`, and networking, decoding and caching must run off the main actor. An `actor` is its own isolation and takes no modifier. Shared mutable state in Core (caches, stores) lives in an `actor`; `Mutex` is for `Sendable` wrappers that must stay synchronous, never a plain class. No `nonisolated(unsafe)`, no `@preconcurrency import`; if one is ever unavoidable, log it in `docs/DECISIONS.md`.
 
-Screen state is a single enum, so the view switches over it exhaustively:
+Screen state is a single enum, so the view switches over it exhaustively. No `idle`: the pipeline emits `loading` as soon as it is wired. `failed` carries `FeedError` until #15 lands `DisplayError` (see `docs/DECISIONS.md`, 2026-10-18).
 
 ```swift
-enum LoadState<Value> {
-    case idle
+enum LoadState<Value: Equatable>: Equatable {
     case loading
     case loaded(Value)
     case empty
-    case failed(DisplayError)
+    case failed(FeedError)
 }
 ```
 
@@ -31,7 +30,7 @@ Core is async/await; Combine is the view model's derived-state pipeline. The ass
 - The repository is one read and one write. The read is `feed()`, an `AsyncStream<Feed?>` whose first element is the cached feed (or `nil` when there is none, so the screen shows loading) and whose later elements are every feed any refresh saves. The write is `refresh()`, the fetch keyed by the validators saved beside the cached feed. Cache-then-network is therefore: subscribe to `feed()` in `load()` with a task that iterates it and sends each element into the products subject, then call `refresh()`; the list renders from disk and refreshes behind it. The repository holds no feed between calls; the view model keeps the feed on screen and turns a refresh outcome (`unchanged`, `updated`, or an error) into its own state, stale included. The fetch never starts before the cache read, and a fail-fast offline error cannot outrun it (see `docs/DECISIONS.md`).
 - Anything that wants the app to show a new feed (pull to refresh, a second screen, a background refresh, a push notification) only calls `refresh()`; every subscriber hears the result. Streams carry no failures: those stay typed on `refresh()`. Services expose `AsyncStream`, never a Combine publisher, because Combine's subjects are not `Sendable` and an actor cannot hand one out without unchecked code (see `docs/DECISIONS.md`, 2026-10-17 and 2026-10-18).
 - The image loader is an actor that shares the in-flight `Task` per URL so concurrent requests fetch once.
-- View models start a `Task` in the intent method (`load()`, `refresh()`), await Core, and assign state. The task is stored so a repeated intent cancels the one in flight. The view model is `@MainActor`, so the assignment needs no hop.
+- View models start a `Task` in the intent method (`load()`, `refresh()`), await Core, and assign state. The task is stored so a repeated intent cancels the one in flight, with two exceptions: `load()` subscribes once and ignores a repeat, and a refresh joins the one in flight (see `docs/DECISIONS.md`, 2026-10-18). The view model is `@MainActor`, so the assignment needs no hop.
 - Inputs that drive derived state (selected tab, products) are fed into subjects (`CurrentValueSubject`), the products subject from the `feed()` stream, and derived state (the filtered list) is a `CombineLatest` pipeline that sinks into the view model's stored property. Every subscription stores in `private var cancellables = Set<AnyCancellable>()`. The pipeline runs on the main actor with the view model, so no `receive(on:)` is needed.
 - Nothing in Core imports Combine.
 
@@ -42,7 +41,7 @@ The feed repository owns its cache: raw feed bytes and validators as two files i
 ## Errors
 
 - Services throw typed errors (`enum NetworkError: Error`). Never `fatalError`, never force unwrap, never `try!` outside tests.
-- One `DisplayError` mapper turns any `Error` into `title` + `message` + optional retry. Views show only `DisplayError`.
+- One `DisplayError` mapper turns any `Error` into `title` + `message` + optional retry. Views show only `DisplayError` (from #15; until then `LoadState.failed` carries `FeedError`, see Architecture).
 
 ## Swift
 

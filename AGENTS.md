@@ -13,7 +13,7 @@ Xcode project, not SwiftPM: adding a file means adding it to the `Ubiquiti Assig
 ```
 Ubiquiti Assignment/
   App/            entry point, root navigation
-  Features/       one folder per screen: View + ViewModel (+ subviews)
+  Features/       one folder per screen: View + ViewModel (+ subviews); Shared/ for types screens share
   Core/           Models, Networking, Caching, ImageLoading. No SwiftUI imports.
     Fakes/        in-memory fakes of the Core protocols, for tests and previews
   UI/             shared components, design tokens from Figma

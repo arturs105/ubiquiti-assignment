@@ -65,5 +65,15 @@ struct InMemoryFeedRepositoryTests {
         #expect(await feeds.collect() == [feed])
     }
 
+    @Test func aNeverAnsweringRefreshThrowsTheCancellationOnceItsTaskIsCancelled() async {
+        let repository = InMemoryFeedRepository.neverAnswering(cached: feed)
+        #expect(await repository.feed().firstElement() == feed)
+
+        let refresh = Task { await repository.load().refresh }
+        refresh.cancel()
+
+        #expect(await refresh.value == .failure(.network(.network(URLError(.cancelled)))))
+    }
+
     private let feed = try! JSONDecoder().decode(Feed.self, from: Data(#"{"version": "v1", "devices": []}"#.utf8))
 }
