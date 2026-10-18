@@ -6,7 +6,7 @@ import SwiftUI
 /// receive their view model by initialiser and know nothing about the stack; see the SwiftUI section of
 /// `docs/CODING_STANDARDS.md`.
 struct RootView: View {
-    /// What `body` builds the list view model from; #11 builds the details view model from it in `destination(for:)`.
+    /// What `body` and `destination(for:)` build the view models from.
     private let dependencies: Dependencies
     @State private var path: [Route] = []
 
@@ -30,7 +30,7 @@ struct RootView: View {
     private func destination(for route: Route) -> some View {
         switch route {
         case let .product(id):
-            ProductDetailView(productID: id)
+            ProductDetailView(viewModel: ProductDetailViewModel(productID: id, repository: dependencies.feedRepository))
         }
     }
 }
