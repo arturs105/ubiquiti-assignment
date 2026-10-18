@@ -12,4 +12,7 @@ extension Logger {
 
     /// Cache reads, writes and recoveries, so where the shown feed came from is visible in Console.
     nonisolated static let caching = Logger(subsystem: subsystem, category: "Caching")
+
+    /// Image loads and where each came from (memory, disk, network), so a slow or failing CDN is visible in Console.
+    nonisolated static let images = Logger(subsystem: subsystem, category: "Images")
 }
