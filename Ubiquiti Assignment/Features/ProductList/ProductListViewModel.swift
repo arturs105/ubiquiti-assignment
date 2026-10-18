@@ -18,9 +18,9 @@ final class ProductListViewModel {
     private(set) var isRefreshing = false
 
     private let repository: any FeedRepository
-    private let feed = CurrentValueSubject<Feed?, Never>(nil)
-    private let refreshing = CurrentValueSubject<Bool, Never>(false)
-    private let refreshFailure = CurrentValueSubject<FeedError?, Never>(nil)
+    private let feedSubject = CurrentValueSubject<Feed?, Never>(nil)
+    private let refreshingSubject = CurrentValueSubject<Bool, Never>(false)
+    private let refreshFailureSubject = CurrentValueSubject<FeedError?, Never>(nil)
     // Plumbing, not state a view reads: kept out of observation so a task swap never invalidates a view.
     @ObservationIgnored private var cancellables = Set<AnyCancellable>()
     @ObservationIgnored private var feedTask: Task<Void, Never>?
@@ -31,22 +31,22 @@ final class ProductListViewModel {
         self.repository = repository
 
         Publishers.CombineLatest3(
-            feed.removeDuplicates { $0?.version == $1?.version },
-            refreshing,
-            refreshFailure,
+            feedSubject.removeDuplicates { $0?.version == $1?.version },
+            refreshingSubject,
+            refreshFailureSubject,
         )
         .map(Self.state)
         .removeDuplicates()
         .sink { [weak self] state in self?.state = state }
         .store(in: &cancellables)
 
-        Publishers.CombineLatest(feed, refreshFailure)
+        Publishers.CombineLatest(feedSubject, refreshFailureSubject)
             .map { feed, failure in Self.visibleProducts(in: feed).isEmpty ? nil : failure }
             .removeDuplicates()
             .sink { [weak self] error in self?.staleError = error }
             .store(in: &cancellables)
 
-        refreshing
+        refreshingSubject
             .removeDuplicates()
             .sink { [weak self] isRefreshing in self?.isRefreshing = isRefreshing }
             .store(in: &cancellables)
@@ -65,7 +65,7 @@ final class ProductListViewModel {
         feedTask = Task { [weak self, repository] in
             for await feed in await repository.feed() {
                 guard let self else { return }
-                self.feed.send(feed)
+                feedSubject.send(feed)
             }
         }
         refreshTask = startRefresh()
@@ -87,7 +87,7 @@ final class ProductListViewModel {
 
     private func startRefresh() -> Task<Void, Never> {
         refreshTask?.cancel()
-        refreshing.send(true)
+        refreshingSubject.send(true)
         return Task { [weak self, repository] in
             var failure: FeedError?
             do throws(FeedError) {
@@ -97,8 +97,8 @@ final class ProductListViewModel {
             }
             // A cancelled refresh was replaced by a newer one, which owns the state from here.
             guard let self, !Task.isCancelled else { return }
-            refreshFailure.send(failure)
-            refreshing.send(false)
+            refreshFailureSubject.send(failure)
+            refreshingSubject.send(false)
         }
     }
 
