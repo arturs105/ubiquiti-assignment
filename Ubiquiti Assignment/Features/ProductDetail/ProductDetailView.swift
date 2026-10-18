@@ -19,7 +19,7 @@ struct ProductDetailView: View {
             Text("Product details")
                 .textStyle(.bodyBold)
                 .foregroundStyle(.foregroundPrimary)
-            Text(productID.uuidString)
+            Text(verbatim: productID.uuidString)
                 .textStyle(.caption)
                 .foregroundStyle(.foregroundSecondary)
         }

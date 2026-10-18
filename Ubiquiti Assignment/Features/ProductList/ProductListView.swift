@@ -18,7 +18,7 @@ struct ProductListView: View {
 }
 
 extension ProductListView {
-    fileprivate enum Constants {
+    fileprivate nonisolated enum Constants {
         /// Fixed ids so the rows and the details screen agree across launches and previews.
         static let placeholderIDs: [Product.ID] = [
             UUID(uuidString: "00000000-0000-0000-0000-000000000001"),

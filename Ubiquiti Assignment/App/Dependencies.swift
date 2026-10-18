@@ -6,7 +6,8 @@ import Foundation
 /// repository and client the app ships with. `RootView` takes a `Dependencies` and builds every screen's view model
 /// from it; the struct itself never enters `Features/`, so a screen only ever sees the one protocol it needs. A
 /// value rather than a container or environment key because the graph is small and explicit injection keeps it
-/// visible. See `docs/DECISIONS.md`, 2026-10-18 "Dependencies is a value built once".
+/// visible. See `docs/DECISIONS.md`, 2026-10-18 "`Dependencies` is a value built once by the App and passed by
+/// initialiser".
 nonisolated struct Dependencies: Sendable {
     /// The feed seam every screen reads and refreshes through.
     let feedRepository: any FeedRepository
