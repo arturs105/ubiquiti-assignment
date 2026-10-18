@@ -48,7 +48,14 @@ actor InMemoryFeedRepository: FeedRepository {
 
     func refresh() throws(FeedError) -> FeedRefresh {
         let outcome = try result.get()
-        if case let .updated(feed) = outcome {
+        switch outcome {
+        case .unchanged where cached == nil:
+            // As in production: nothing cached means nothing a server could confirm, so a scripted unchanged
+            // becomes the status error the real repository throws, and previews cannot show a state it never reaches.
+            throw .network(.httpStatus(HTTPStatus.notModified))
+        case .unchanged:
+            break
+        case let .updated(feed):
             publish(feed)
         }
         return outcome

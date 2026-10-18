@@ -16,6 +16,12 @@ struct InMemoryFeedRepositoryTests {
         #expect(result == FeedLoad(cached: nil, refresh: .success(.updated(feed))))
     }
 
+    @Test func unchangedWithoutACachedFeedThrowsTheStatusErrorLikeProduction() async {
+        let result = await InMemoryFeedRepository(refresh: .unchanged).load()
+
+        #expect(result == FeedLoad(cached: nil, refresh: .failure(.network(.httpStatus(304)))))
+    }
+
     @Test func replaysTheScriptedFailureBesideTheCachedFeed() async {
         let result = await InMemoryFeedRepository(cached: feed, error: .decoding("bad")).load()
 
