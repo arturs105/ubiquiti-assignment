@@ -241,3 +241,32 @@ The log is append-only, so wording that later entries made wrong is corrected he
 ## 2026-10-18 Image loader and `URLCache` setup deferred to #9
 
 The shell wires only the feed repository. The image loader protocol, its `URLCache`-backed session and the app-start cache configuration the caching standard describes land with #9, where the loader itself (hand-rolled actor or a library) is chosen. Adding a placeholder protocol now would prejudge that choice and leave an empty field on `Dependencies`. Cost: #9 touches `Dependencies` and `RootView` as well as `Core/ImageLoading`.
+
+## 2026-10-18 Images load through Kingfisher, not a hand-rolled actor
+
+Issue #9 left the choice open: a Core actor sharing the in-flight `Task` per URL over `URLCache`, or a library. Chosen: [Kingfisher](https://github.com/onevcat/Kingfisher) 8.14, SwiftPM, `upToNextMajor`, `Package.resolved` committed. Why: the actor covers dedup and a disk cache in a few dozen lines, but then the next few hundred follow (memory cache that empties on a memory warning, disk expiry and a size cap, background decoding, cache cleanup on background) and every one of them is untested code in a submission whose grading is about the screens. Kingfisher ships all of it, is maintained, supports Swift 6.2 strict concurrency (8.13 raised the minimum to Xcode 26), and exposes an `async throws` retrieve that honours task cancellation. Cost: a dependency a reviewer has to trust, one `project.pbxproj` edit beyond build settings (the rule in `AGENTS.md` now names package dependencies), and three lines of the caching standard rewritten (the actor, the in-flight `Task`, `URLCache`). Contained: `KingfisherImageLoader` is the only file that imports the library; the `ImageLoader` protocol, `ImageSize`, `ImageError` and the fake know nothing of it, so swapping it for the actor later touches one file and the dependency list.
+
+## 2026-10-18 `ImageLoader` takes a product and a size, returns `UIImage`, throws `ImageError`
+
+One method: `image(for: Product, size: ImageSize) async throws(ImageError) -> UIImage`. The product, not a URL: the service is "the picture of this product at this size", the URL is its business (`Product+ImageURL.swift`), and a view model cannot pass an arbitrary URL. `UIImage`, not `Data` or `CGImage`: Kingfisher hands back a decoded `UIImage`, `Data` would make the view decode on the main thread, and `CGImage` loses scale and orientation. This is the first UIKit type in Core; the architecture standard now allows UIKit value types there and still bans SwiftUI. `ImageError` has three cases: `network(NetworkError)` (the feed's transport enum reused, so a 403 is `httpStatus(403)`), `invalidImage` (bytes that make no image, a cache file that could not be read back: logged, shown as the failure image), and `cancelled`, which typed throws needs because `CancellationError` cannot pass through `throws(ImageError)`. Cost: `cancelled` is a case the display mapper must know to ignore. No `cancel()` on the seam: the awaiting task's cancellation propagates into Kingfisher's download.
+
+## 2026-10-18 `KingfisherImageLoader` is a `final class`, not an actor, over its own manager
+
+The loader holds one `KingfisherManager` built from its own `ImageCache(name: "ProductImages")` and `ImageDownloader`, never `KingfisherManager.shared` or `ImageCache.default`: the standard bans singletons, and a test gets a cache in a temporary directory it removes afterwards. The manager is `Sendable` and the loader has no other state, so it is a `nonisolated final class`; an actor isolating nothing would be cargo cult. The caching standard's "the image loader is an actor" line is replaced. Options passed: `.backgroundDecode` only, so the first draw of a hero does not decode a PNG on the main thread. No `DownsamplingImageProcessor`: the CDN renders the requested width, so a thumbnail arrives as a 128px bitmap. No prefetching (issue #9 says rows load as they appear), no synchronous memory-cache lookup (a row scrolling back shows the placeholder for a frame; revisit in #8 if it flickers), no retry (as `FeedClient`: the row retries when it reappears). The download session is ephemeral with `waitsForConnectivity` off, matching the feed session: an offline row fails fast to the failure image.
+
+## 2026-10-18 Image cache policy: memory defaults, disk 30 days and 100 MB
+
+Memory stays on Kingfisher's defaults (5 minutes, a quarter of physical memory, emptied on a memory warning). Disk expiry is raised from 7 to 30 days and capped at 100 MB: product images change essentially never, so a weekly user never re-downloads a thumbnail, and 698 products at two sizes stays far under the cap. None of the numbers come from measurement.
+
+## 2026-10-18 Image sizes: thumbnail 128, hero 640
+
+`ImageSize` is an `Int` enum whose raw value is the CDN `w` parameter. The list thumbnail renders at 28pt (Figma), 84px at 3x; 128 is the nearest width the assignment names and leaves headroom. The hero is 640, the assignment's suggestion, until the details frame in Figma is measured in #11. The CDN accepts the inner URL both bare and percent-encoded (checked 2026-10-18), so the builder uses `URL.appending(queryItems:)` with no manual escaping.
+
+## 2026-10-18 Second force unwrap: the image service URL literal
+
+`Product.Constants.imageService` is `URL(string: "https://images.svc.ui.com/")!`, the second accepted force unwrap on a compile-time literal beside the feed URL, with the same guard: a test evaluates it on every run. Why: `URLComponents.url` is optional too, and a non-optional `imageURL(size:)` was decided on 2026-10-15; the literal is the one place the optionality can be discharged honestly.
+
+## 2026-10-18 Native macOS dropped from the supported platforms
+
+`SUPPORTED_PLATFORMS` loses `macosx`; iOS, visionOS and their simulators stay. The app built natively for macOS until now, and `UIImage` in Core ends that. Why not keep it: the Figma design, the Makefile and CI are all iPhone, a Mac still runs the iPad build, and keeping native macOS would have meant `NSImage` or `CGImage` on the seam for a destination nobody checks. Cost: "My Mac" leaves the destination list in Xcode.
+

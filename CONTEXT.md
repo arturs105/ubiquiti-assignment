@@ -50,3 +50,23 @@ _Avoid_: Outdated, offline, expired
 **Update**:
 A feed a refresh has just downloaded, handed to every screen subscribed to the repository's `feed()` stream once its save has been attempted, whoever triggered the refresh. A subscription opens with the cached feed (or nothing) and every element after that is an update. Never a failure: those go to whoever called `refresh()`.
 _Avoid_: Event, change, notification, publish (outside the in-memory fake's test hook)
+
+**Product image**:
+The picture of a product that the Ubiquiti image CDN serves from the product's default image identifier, asked for at a named image size. Loaded lazily when a screen needs it, never shipped with the feed.
+_Avoid_: Icon, picture, asset
+
+**Image size**:
+Which rendition of a product image a screen asks for: thumbnail or hero. The CDN resizes; the app never scales an image itself.
+_Avoid_: Resolution, width, variant
+
+**Thumbnail**:
+The small product image shown in a list row.
+_Avoid_: Icon, preview, small image
+
+**Hero image**:
+The large product image shown at the top of the details screen.
+_Avoid_: Full-size image, big image, detail image, banner
+
+**Image loader**:
+The service a screen asks for a product image. It fetches, caches in memory and on disk, and reuses a download already in flight for the same image.
+_Avoid_: Image service, image cache (as the name of the service), downloader
