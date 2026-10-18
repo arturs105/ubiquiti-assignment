@@ -32,5 +32,21 @@ What the server handed back with the last feed download so the app can ask wheth
 _Avoid_: Fingerprint, cache tag, revision
 
 **Unchanged**:
-The server's answer to a request carrying validators when the feed has not changed since. Nothing is downloaded; the stored feed stands.
+The server's answer to a request carrying validators when the feed has not changed since. Nothing is downloaded; the cached feed stands.
 _Avoid_: 304, not modified, cache hit
+
+**Cached feed**:
+The last downloaded feed bytes kept on disk together with their validators. What the app shows before the server has answered, and what it falls back to when the server cannot be reached.
+_Avoid_: Store, cache (as a noun for the data)
+
+**Refresh outcome**:
+What the server said when asked for the feed: unchanged, or an updated feed that is now the cached feed. The type is `FeedRefresh`. A refresh that fails has no outcome; the app keeps what it shows and calls it stale.
+_Avoid_: Snapshot, result, response
+
+**Stale**:
+A feed kept on screen because the refresh behind it failed. The view model's state, not the repository's: the repository reports the failure and holds nothing. Stale is about the refresh failing, not about age: a day-old cached feed the server has confirmed is current, not stale.
+_Avoid_: Outdated, offline, expired
+
+**Update**:
+A feed a refresh has just downloaded, handed to every screen subscribed to the repository's `feed()` stream once its save has been attempted, whoever triggered the refresh. A subscription opens with the cached feed (or nothing) and every element after that is an update. Never a failure: those go to whoever called `refresh()`.
+_Avoid_: Event, change, notification, publish (outside the in-memory fake's test hook)

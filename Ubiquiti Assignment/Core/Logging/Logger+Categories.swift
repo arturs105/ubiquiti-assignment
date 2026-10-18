@@ -9,4 +9,7 @@ extension Logger {
 
     /// Feed requests and responses, so conditional requests and 304 answers are visible in Console.
     nonisolated static let networking = Logger(subsystem: subsystem, category: "Networking")
+
+    /// Cache reads, writes and recoveries, so where the shown feed came from is visible in Console.
+    nonisolated static let caching = Logger(subsystem: subsystem, category: "Caching")
 }

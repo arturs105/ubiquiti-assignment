@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 import OSLog
 
@@ -14,19 +13,23 @@ nonisolated struct URLSessionFeedClient: FeedClient {
 
     // MARK: - FeedClient
 
-    func fetch(validators: Validators) -> AnyPublisher<FeedResponse, NetworkError> {
-        Deferred { [url, session] in
-            let request = Self.request(for: url, validators: validators)
-            Logger.networking.info("""
-            GET \(url, privacy: .public) \(validators.isConditional ? "conditional" : "unconditional", privacy: .public)
-            """)
-            return session.dataTaskPublisher(for: request)
-                .mapError(NetworkError.network)
-                .flatMap { data, response in
-                    Self.feedResponse(data: data, response: response, conditional: validators.isConditional).publisher
-                }
+    func fetch(validators: Validators) async throws(NetworkError) -> FeedResponse {
+        let request = Self.request(for: url, validators: validators)
+        Logger.networking.info("""
+        GET \(url, privacy: .public) \(validators.isConditional ? "conditional" : "unconditional", privacy: .public)
+        """)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let error as URLError {
+            throw .network(error)
+        } catch {
+            // `URLSession.data(for:)` throws untyped. In practice it is always a `URLError`; anything else is
+            // wrapped so the failure type stays `NetworkError` and the original error is still inspectable.
+            throw .network(URLError(.unknown, userInfo: [NSUnderlyingErrorKey: error]))
         }
-        .eraseToAnyPublisher()
+        return try Self.feedResponse(data: data, response: response, conditional: validators.isConditional).get()
     }
 
     // MARK: - Private helpers
