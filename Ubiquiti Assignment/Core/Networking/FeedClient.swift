@@ -8,6 +8,7 @@ nonisolated protocol FeedClient: Sendable {
     /// Requests the feed, sending `validators` as a conditional request when they are present.
     ///
     /// Returns exactly one `FeedResponse` or throws one `NetworkError`. No retry: the caller decides when to try
-    /// again. Runs on the caller's task; nothing here touches the main actor.
+    /// again. Nonisolated, so under approachable concurrency it runs on the caller's isolation: off the main actor
+    /// because its caller, the repository actor, is.
     func fetch(validators: Validators) async throws(NetworkError) -> FeedResponse
 }
