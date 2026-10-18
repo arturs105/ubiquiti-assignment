@@ -101,6 +101,8 @@ final class KingfisherImageLoaderTests {
         let task = Task {
             try await loader.image(for: product, size: .thumbnail)
         }
+        // Cancel a download that is running, not a task that has not started: that path is a different error.
+        try await waitForRequest(to: product.imageURL(size: .thumbnail))
         task.cancel()
 
         await #expect(throws: ImageError.cancelled) {
@@ -116,12 +118,25 @@ final class KingfisherImageLoaderTests {
         return try KingfisherImageLoader(directory: directory, sessionConfiguration: configuration)
     }
 
+    /// Polls until the stub has seen a request for `url`, bounded by the suite's time limit.
+    private func waitForRequest(to url: URL) async throws {
+        while StubURLProtocol.requestCount(for: url) == 0 {
+            try await Task.sleep(for: Constants.pollInterval)
+        }
+    }
+
     /// Polls until a file appears under the cache directory, bounded by the suite's time limit.
     private func waitForCacheFile() async throws {
         while try FileManager.default.subpathsOfDirectory(atPath: directory.path())
             .contains(where: { $0.contains("/") }) == false
         {
-            try await Task.sleep(for: .milliseconds(20))
+            try await Task.sleep(for: Constants.pollInterval)
         }
+    }
+}
+
+extension KingfisherImageLoaderTests {
+    nonisolated enum Constants {
+        static let pollInterval = Duration.milliseconds(20)
     }
 }
