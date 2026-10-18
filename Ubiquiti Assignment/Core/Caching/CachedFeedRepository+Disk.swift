@@ -39,30 +39,25 @@ extension CachedFeedRepository {
         return CachedHeader(version: header.version, validators: readValidators())
     }
 
-    /// Writes the download as both files, each atomically (temporary file then rename). Two renames cannot be one, so
-    /// the old validators go first: a crash or a throw at any step leaves either the previous pair, the previous
-    /// feed alone, the new feed alone or the new pair. A feed without validators is a valid cache (the next request
-    /// is unconditional); new bytes beside old validators, which a 304 would wrongly confirm, never exist. Failures
-    /// are logged and swallowed: the user has the feed already.
-    func write(_ download: Download) {
+    /// Writes the downloaded bytes and their validators as the two files, each atomically (temporary file then
+    /// rename). Two renames cannot be one, so the old validators go first: a crash or a throw at any step leaves
+    /// either the previous pair, the previous feed alone, the new feed alone or the new pair. A feed without
+    /// validators is a valid cache (the next request is unconditional); new bytes beside old validators, which a 304
+    /// would wrongly confirm, never exist. Failures are logged and swallowed: the user has the feed already.
+    func write(data: Data, validators: Validators) {
         do {
-            let validators = try JSONEncoder().encode(download.validators)
+            let encodedValidators = try JSONEncoder().encode(validators)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             if FileManager.default.fileExists(atPath: validatorsFileURL.path) {
                 try FileManager.default.removeItem(at: validatorsFileURL)
             }
-            try download.data.write(to: feedFileURL, options: .atomic)
-            try validators.write(to: validatorsFileURL, options: .atomic)
+            try data.write(to: feedFileURL, options: .atomic)
+            try encodedValidators.write(to: validatorsFileURL, options: .atomic)
             let path = directory.path
-            Logger.caching.info("Saved \(download.data.count) bytes and validators to \(path, privacy: .public)")
+            Logger.caching.info("Saved \(data.count) bytes and validators to \(path, privacy: .public)")
         } catch {
             Logger.caching.error("Could not save the feed: \(error)")
         }
-    }
-
-    /// The one place feed bytes become a `Feed`, for the download and for the cached file alike.
-    static func decodeFeed(_ data: Data) throws -> Feed {
-        try JSONDecoder().decode(Feed.self, from: data)
     }
 
     // MARK: - Private helpers

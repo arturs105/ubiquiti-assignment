@@ -83,13 +83,14 @@ actor CachedFeedRepository: FeedRepository {
             if feed.version == cached?.version {
                 // Same feed by identity (see `docs/DECISIONS.md`): saved anyway, for the new validators.
                 Logger.caching.info("""
-                Downloaded feed has the cached version \(feed.version, privacy: .public), saving it for the new validators
+                Downloaded feed has the cached version \(feed.version, privacy: .public), \
+                saving it for the new validators
                 """)
             } else {
                 Logger.caching.info("Downloaded feed version \(feed.version, privacy: .public)")
             }
             // The caller waits on the write: milliseconds, and the cached feed is already on screen by then.
-            write(Download(data: data, validators: validators))
+            write(data: data, validators: validators)
             // Subscribers hear of a feed only after the save is attempted, so what they show is what disk holds unless
             // the write failed, which is logged and does not keep the feed from the screen.
             for continuation in subscribers.values {
@@ -97,6 +98,14 @@ actor CachedFeedRepository: FeedRepository {
             }
             return .updated(feed)
         }
+    }
+
+    // MARK: - Decoding
+
+    /// The one place feed bytes become a `Feed`, for the download and for the cached file alike. Internal so the
+    /// disk extension can reach it; static because it touches no actor state.
+    static func decodeFeed(_ data: Data) throws -> Feed {
+        try JSONDecoder().decode(Feed.self, from: data)
     }
 
     // MARK: - Private helpers
@@ -119,13 +128,7 @@ extension CachedFeedRepository {
         let validators: Validators
     }
 
-    /// Fresh bytes and validators the server just sent, as they go to disk.
-    nonisolated struct Download: Sendable {
-        let data: Data
-        let validators: Validators
-    }
-
-    /// File names and locations shared by the pipeline, the disk extension and the tests.
+    /// File names and locations shared by the repository, its disk extension and the tests.
     nonisolated enum Constants {
         /// `Library/Caches/Feed/`: purgeable by the system, which the recovery rules tolerate.
         static let defaultDirectory = URL.cachesDirectory.appending(path: "Feed")
