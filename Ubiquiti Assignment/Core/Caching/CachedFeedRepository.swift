@@ -2,14 +2,14 @@ import Foundation
 import OSLog
 
 /// The production `FeedRepository`: one stream that starts with the cached feed from disk and continues with every
-/// feed a conditional fetch saves, and the fetch itself.
+/// feed a conditional fetch downloads, and the fetch itself.
 ///
 /// Owns its cache. Two files under `directory` hold the last downloaded bytes and their validators (see
 /// `CachedFeedRepository+Disk.swift`). No feed is held in memory: every call starts from disk, so nothing held here
 /// can drift from what is saved. The only other state is the list of `feed()` subscribers, each a stream
-/// continuation that is handed the feed right after it is written. Disk is read and written on the actor, off
-/// whatever task asked; the network call is the only suspension point. See `docs/DECISIONS.md`, "The repository
-/// holds no feed in memory" and "One stream, not two calls".
+/// continuation that is handed each downloaded feed once its save has been attempted. Disk is read and written on
+/// the actor, off whatever task asked; the network call is the only suspension point. See `docs/DECISIONS.md`, "The
+/// repository holds no feed in memory" and "One stream, not two calls".
 actor CachedFeedRepository: FeedRepository {
     private let client: any FeedClient
     /// Where the two cache files live. Internal so the disk extension can reach it.

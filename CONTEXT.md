@@ -48,5 +48,5 @@ A feed kept on screen because the refresh behind it failed. The view model's sta
 _Avoid_: Outdated, offline, expired
 
 **Update**:
-A feed a refresh has just saved, handed to every screen subscribed to the repository's `feed()` stream, whoever triggered the refresh. A subscription opens with the cached feed (or nothing) and every element after that is an update. Never a failure: those go to whoever called `refresh()`.
+A feed a refresh has just downloaded, handed to every screen subscribed to the repository's `feed()` stream once its save has been attempted, whoever triggered the refresh. A subscription opens with the cached feed (or nothing) and every element after that is an update. Never a failure: those go to whoever called `refresh()`.
 _Avoid_: Event, change, notification, publish (outside the in-memory fake's test hook)
