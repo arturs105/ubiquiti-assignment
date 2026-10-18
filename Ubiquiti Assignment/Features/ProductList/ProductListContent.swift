@@ -42,6 +42,8 @@ struct ProductListContent: View {
         }
         .listStyle(.insetGrouped)
         .contentMargins(.horizontal, Spacing.large, for: .scrollContent)
+        // The inset-grouped default leaves a section's worth of air under the tab bar; Figma has the 8pt gap.
+        .contentMargins(.top, Spacing.small, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .background(.backgroundSecondary)
         .refreshable(action: refresh)

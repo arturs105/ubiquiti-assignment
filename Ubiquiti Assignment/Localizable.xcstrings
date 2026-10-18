@@ -1,9 +1,14 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "All": {},
+    "Cameras": {},
+    "Category": {},
     "Details": {},
     "Fetching details": {},
     "Fetching products": {},
+    "IoT": {},
+    "No IoT devices": {},
     "No cameras": {},
     "No products": {},
     "Nothing in this category yet. Try another tab.": {},
