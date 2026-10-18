@@ -5,11 +5,11 @@ import UIKit
 
 /// The production `ImageLoader`: Kingfisher's manager over a cache and a downloader of this loader's own.
 ///
-/// The only file that imports Kingfisher. The library owns what the caching standard once asked of a hand-rolled
-/// actor: one download per URL however many rows ask at once, a memory cache that empties on a memory warning, and
-/// a disk cache that expires. This type holds no state of its own beyond the manager, so it is a `final class`
-/// rather than an actor: nothing here needs isolating. Why a library over the actor is in `docs/DECISIONS.md`,
-/// 2026-10-18 "Images load through Kingfisher".
+/// The only file that imports Kingfisher. The library owns the work the caching standard once planned for a Core
+/// type of our own: one download per URL however many rows ask at once, a memory cache that empties on a memory
+/// warning, and a disk cache that expires. This type holds no state beyond the manager, which is `Sendable`, so
+/// there is nothing to isolate and it is a `final class`, not an actor. Why a library over our own code is in
+/// `docs/DECISIONS.md`, 2026-10-18 "Images load through Kingfisher".
 final nonisolated class KingfisherImageLoader: ImageLoader, Sendable {
     private let manager: KingfisherManager
 
