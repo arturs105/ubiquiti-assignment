@@ -80,7 +80,14 @@ actor CachedFeedRepository: FeedRepository {
                 Logger.caching.error("Downloaded feed does not decode: \(error)")
                 throw .decoding(String(describing: error))
             }
-            Logger.caching.info("Downloaded feed version \(feed.version, privacy: .public)")
+            if feed.version == cached?.version {
+                // Same feed by identity (see `docs/DECISIONS.md`): saved anyway, for the new validators.
+                Logger.caching.info("""
+                Downloaded feed has the cached version \(feed.version, privacy: .public), saving it for the new validators
+                """)
+            } else {
+                Logger.caching.info("Downloaded feed version \(feed.version, privacy: .public)")
+            }
             // The caller waits on the write: milliseconds, and the cached feed is already on screen by then.
             write(Download(data: data, validators: validators))
             // Subscribers hear of a feed only once it is saved, so what they show is what disk holds.
