@@ -62,13 +62,22 @@ extension CachedFeedRepository {
 
     // MARK: - Private helpers
 
-    /// The cached feed's bytes, or `nil` after recovering from a missing or unreadable file.
+    /// The cached feed's bytes, or `nil`. A missing file is no cache, not a broken one (first launch, a purged
+    /// `Library/Caches`): nothing to recover unless validators were left behind on their own. An unreadable one is.
     private func readFeedFile() -> Data? {
-        guard let data = try? Data(contentsOf: feedFileURL) else {
-            recover(reason: "no readable \(Constants.feedFile)")
+        do {
+            return try Data(contentsOf: feedFileURL)
+        } catch CocoaError.fileReadNoSuchFile {
+            if FileManager.default.fileExists(atPath: validatorsFileURL.path) {
+                recover(reason: "\(Constants.validatorsFile) without \(Constants.feedFile)")
+            } else {
+                Logger.caching.info("No cached feed")
+            }
+            return nil
+        } catch {
+            recover(reason: "\(Constants.feedFile) is unreadable: \(error)")
             return nil
         }
-        return data
     }
 
     /// `Validators.empty` when the file is missing or broken: the feed still loads, the next request is unconditional.
