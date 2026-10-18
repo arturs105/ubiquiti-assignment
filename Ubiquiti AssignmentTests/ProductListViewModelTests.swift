@@ -81,34 +81,21 @@ struct ProductListViewModelTests {
         #expect(await settles(viewModel, at: .empty))
     }
 
-    @Test func placeholderProductsAreHidden() async {
+    @Test func placeholderProductsAreShownLikeAnyOther() async {
         let feed = Feed(version: "placeholders", products: [Product.placeholder] + Product.previews)
         let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .updated(feed)))
 
         viewModel.load()
         await viewModel.refresh()
 
-        #expect(await settles(viewModel, at: .loaded(Product.previews)))
+        #expect(await settles(viewModel, at: .loaded(feed.products)))
     }
 
-    @Test func aFeedOfOnlyPlaceholdersIsEmpty() async {
-        let feed = Feed(version: "placeholders", products: [Product.placeholder])
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .updated(feed)))
-
-        viewModel.load()
-        await viewModel.refresh()
-
-        #expect(await settles(viewModel, at: .empty))
-    }
-
-    @Test(arguments: [
-        Feed(version: "empty", products: []),
-        Feed(version: "placeholders", products: [Product.placeholder]),
-    ])
-    func aRefreshThatFailsOverAListWithNoRowsIsAnError(feed: Feed) {
+    @Test func aRefreshThatFailsOverAnEmptyFeedIsAnError() {
         // Through the view model, no feed and a failure is `.failed` too, so a state reached before the cached feed
         // lands would pass without exercising this mapping; the mapping is asserted on its own instead.
-        let state = ProductListViewModel.state(feed: feed, isRefreshing: false, failure: offline)
+        let empty = Feed(version: "empty", products: [])
+        let state = ProductListViewModel.state(feed: empty, isRefreshing: false, failure: offline)
 
         #expect(state == .failed(offline))
     }

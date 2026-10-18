@@ -41,7 +41,7 @@ final class ProductListViewModel {
         .store(in: &cancellables)
 
         Publishers.CombineLatest(feedSubject, refreshFailureSubject)
-            .map { feed, failure in Self.visibleProducts(in: feed).isEmpty ? nil : failure }
+            .map { feed, failure in (feed?.products.isEmpty ?? true) ? nil : failure }
             .removeDuplicates()
             .sink { [weak self] error in self?.staleError = error }
             .store(in: &cancellables)
@@ -112,7 +112,7 @@ final class ProductListViewModel {
     /// The state pipeline's `map`, internal so tests can pin a mapping whose inputs arrive through two tasks in an
     /// order the scheduler picks.
     static func state(feed: Feed?, isRefreshing: Bool, failure: FeedError?) -> LoadState<[Product]> {
-        let products = visibleProducts(in: feed)
+        let products = feed?.products ?? []
         guard products.isEmpty else { return .loaded(products) }
         // No rows to keep on screen, cached or not: the failure is the state until a retry is under way, which
         // reads as loading again. An empty list over a failed refresh would claim the catalogue is empty.
@@ -120,10 +120,5 @@ final class ProductListViewModel {
             return isRefreshing ? .loading : .failed(failure)
         }
         return feed == nil ? .loading : .empty
-    }
-
-    /// The feed's two placeholder entries decode like any product; hiding them is this screen's rule.
-    private static func visibleProducts(in feed: Feed?) -> [Product] {
-        feed?.products.filter { $0.line.id != .unknown } ?? []
     }
 }

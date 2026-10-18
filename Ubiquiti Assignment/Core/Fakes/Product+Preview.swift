@@ -34,7 +34,7 @@ extension Product {
         ),
     ]
 
-    /// One of the feed's two placeholder entries, which the list hides.
+    /// One of the feed's two placeholder entries, listed like any other product.
     nonisolated static let placeholder = Product(
         id: UUID(),
         name: "Unknown Device",
