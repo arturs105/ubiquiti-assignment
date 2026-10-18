@@ -51,7 +51,7 @@ actor CachedFeedRepository: FeedRepository {
 
     func refresh() async throws(FeedError) -> FeedRefresh {
         // Read, not remembered: validators are only ever sent beside a feed that decodes, and reading the file is
-        // what proves that. The header, not the whole feed: `feed()` has already decoded the products this load.
+        // what proves that. The header is enough to prove it, so the products are not decoded here.
         let cached = readCachedHeader()
         let validators = cached?.validators ?? .empty
         let response: FeedResponse
