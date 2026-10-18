@@ -37,7 +37,12 @@ extension CachedFeedRepository {
             recover(reason: "\(Constants.feedFile) does not decode: \(error)")
             return nil
         }
-        return CachedHeader(version: header.version, validators: readValidators())
+        let validators = readValidators()
+        Logger.caching.debug("""
+        Read cached feed header \(header.version, privacy: .public), \
+        validators \(validators.isConditional ? "present" : "absent", privacy: .public)
+        """)
+        return CachedHeader(version: header.version, validators: validators)
     }
 
     /// Writes the downloaded bytes and their validators as the two files, each atomically (temporary file then
