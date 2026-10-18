@@ -17,16 +17,26 @@ struct ProductListViewModelTests {
         #expect(viewModel.isRefreshing == false)
     }
 
-    @Test func loadAloneRendersTheCachedFeedAndRefreshesBehindIt() async {
+    @Test func loadRendersTheCachedFeedBeforeTheRefreshAnswers() async {
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository.neverAnswering(cached: .preview))
+
+        viewModel.load()
+
+        #expect(await settles(viewModel, at: .loaded(Product.previews)))
+        #expect(viewModel.isRefreshing)
+        #expect(viewModel.staleError == nil)
+    }
+
+    @Test func loadAloneReplacesTheCachedFeedWithTheRefreshedOne() async {
         let update = Feed(version: "v2", products: [Product.previews[0]])
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .updated(update))
         let viewModel = ProductListViewModel(repository: repository)
 
         viewModel.load()
 
-        #expect(await settles(viewModel, at: .loaded([Product.previews[0]])))
+        // The new rows and the end of the refresh arrive through two tasks in either order, so wait for both.
+        #expect(await settles(viewModel) { $0.state == .loaded([Product.previews[0]]) && !$0.isRefreshing })
         #expect(viewModel.staleError == nil)
-        #expect(viewModel.isRefreshing == false)
     }
 
     @Test func keepsTheCachedFeedAsStaleWhenTheRefreshFails() async {
