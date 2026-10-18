@@ -62,6 +62,7 @@ The feed repository owns its cache: raw feed bytes and validators as two files i
 - Design tokens (`UI/Theme/`) hold colours, spacing, type ramp pulled from Figma. Views use tokens, never literal values.
 - Accessibility: every image has a label or is `.accessibilityHidden(true)`; tappable rows have one accessibility element.
 - Navigation through `NavigationStack` with a `Hashable` route value, not `NavigationLink(destination:)`.
+- One `Dependencies` value, built once by the App, is the composition root. `RootView` takes it by initialiser, owns the `NavigationStack` path and the single `navigationDestination(for: Route.self)`, and is the only place screens are built. A screen owns its view model: the root (for the list) or the destination closure (for details) builds the view model from `Dependencies` and passes it to the view's initialiser, which keeps it as `@State`. `Dependencies` never enters `Features/`, and a screen knows nothing about the stack it sits in, so it previews and reuses in isolation.
 
 ## Tests
 
