@@ -37,6 +37,45 @@ nonisolated struct Product: Codable, Hashable, Identifiable, Sendable {
     let wifiGeneration: String?
     let isARSupported: Bool?
 
+    /// Builds a product directly, for previews and tests; the feed itself always arrives through `init(from:)`.
+    init(
+        id: UUID,
+        name: String,
+        abbreviation: String,
+        sku: String,
+        deviceType: String,
+        shortnames: [String] = [],
+        defaultImageID: String,
+        line: Line,
+        adoptability: Adoptability? = nil,
+        fieldOfView: Double? = nil,
+        suggestedDistance: Double? = nil,
+        baseConsumptionWatts: Double? = nil,
+        minimumAdoptVersion: String? = nil,
+        complianceModelName: String? = nil,
+        isIndoorOnly: Bool? = nil,
+        wifiGeneration: String? = nil,
+        isARSupported: Bool? = nil,
+    ) {
+        self.id = id
+        self.name = name
+        self.abbreviation = abbreviation
+        self.sku = sku
+        self.deviceType = deviceType
+        self.shortnames = shortnames
+        self.defaultImageID = defaultImageID
+        self.line = line
+        self.adoptability = adoptability
+        self.fieldOfView = fieldOfView
+        self.suggestedDistance = suggestedDistance
+        self.baseConsumptionWatts = baseConsumptionWatts
+        self.minimumAdoptVersion = minimumAdoptVersion
+        self.complianceModelName = complianceModelName
+        self.isIndoorOnly = isIndoorOnly
+        self.wifiGeneration = wifiGeneration
+        self.isARSupported = isARSupported
+    }
+
     // MARK: - Codable
 
     private enum CodingKeys: String, CodingKey {
