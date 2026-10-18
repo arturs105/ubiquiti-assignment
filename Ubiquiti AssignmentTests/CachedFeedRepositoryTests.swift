@@ -2,6 +2,16 @@ import Foundation
 import Testing
 @testable import Ubiquiti_Assignment
 
+/// Feed files `Feed` rejects, which the header `refresh()` reads must reject too. `devices` null and `devices` an
+/// object are where a header that read `devices` with `decodeIfPresent`, or not at all, would part from `Feed`.
+private nonisolated let undecodableFeedFiles = [
+    Data("not json".utf8),
+    Data(#"{"version": 1}"#.utf8),
+    Data(#"{"devices": []}"#.utf8),
+    Data(#"{"version": "v", "devices": null}"#.utf8),
+    Data(#"{"version": "v", "devices": {}}"#.utf8),
+]
+
 /// A class, not a struct, so `deinit` can remove each test's cache directory once the test is over.
 @Suite(.timeLimit(.minutes(1)))
 final class CachedFeedRepositoryTests {
@@ -136,7 +146,7 @@ final class CachedFeedRepositoryTests {
         #expect(FileManager.default.fileExists(atPath: validatorsFileURL.path) == false)
     }
 
-    @Test(arguments: [Data("not json".utf8), Data(#"{"version": 1}"#.utf8), Data(#"{"devices": []}"#.utf8)])
+    @Test(arguments: undecodableFeedFiles)
     func anUndecodableFeedFileIsNoCacheAndBothFilesAreDeleted(bytes: Data) async throws {
         try seed(bytes: bytes, validators: validators1)
         let client = RecordingFeedClient(result: .failure(.httpStatus(500)))
@@ -149,7 +159,7 @@ final class CachedFeedRepositoryTests {
         #expect(FileManager.default.fileExists(atPath: validatorsFileURL.path) == false)
     }
 
-    @Test(arguments: [Data("not json".utf8), Data(#"{"version": 1}"#.utf8), Data(#"{"devices": []}"#.utf8)])
+    @Test(arguments: undecodableFeedFiles)
     func refreshAloneTreatsAnUndecodableFeedFileAsNoCache(bytes: Data) async throws {
         // refresh() checks only the feed's top level; it must reject exactly what feed() rejects.
         try seed(bytes: bytes, validators: validators1)
