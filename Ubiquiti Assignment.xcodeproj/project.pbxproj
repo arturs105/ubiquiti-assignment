@@ -6,11 +6,6 @@
 	objectVersion = 90;
 	objects = {
 
-/* Begin PBXFileReference section */
-		000000000000000000000120 /* Ubiquiti Assignment.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Ubiquiti Assignment.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		000000000000000000000220 /* Ubiquiti AssignmentTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Ubiquiti AssignmentTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-/* End PBXFileReference section */
-
 /* Begin PBXContainerItemProxy section */
 		000000000000000000000230 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -20,6 +15,11 @@
 			remoteInfo = "Ubiquiti Assignment";
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000120 /* Ubiquiti Assignment.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Ubiquiti Assignment.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000220 /* Ubiquiti AssignmentTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Ubiquiti AssignmentTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		000000000000000000000010 /* Ubiquiti Assignment */ = {
