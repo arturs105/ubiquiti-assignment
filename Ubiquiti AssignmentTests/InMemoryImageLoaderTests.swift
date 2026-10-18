@@ -23,15 +23,14 @@ struct InMemoryImageLoaderTests {
 
     @Test func overrideBeatsTheDefaultForItsProduct() async throws {
         let product = try Product.stub()
-        let loader = InMemoryImageLoader(
-            answer: .success(.solid(.blue, size: .thumbnail)),
-            overrides: [product.id: .failure(.invalidImage)],
-        )
+        let image = UIImage.solid(.blue, size: .thumbnail)
+        let loader = InMemoryImageLoader(answer: .success(image), overrides: [product.id: .failure(.invalidImage)])
 
         await #expect(throws: ImageError.invalidImage) {
             try await loader.image(for: product, size: .thumbnail)
         }
-        _ = try await loader.image(for: Product.stub(), size: .thumbnail)
+        let otherImage = try await loader.image(for: Product.stub(), size: .thumbnail)
+        #expect(otherImage === image)
     }
 
     @Test func pendingAnswersOnlyWithCancellation() async throws {
