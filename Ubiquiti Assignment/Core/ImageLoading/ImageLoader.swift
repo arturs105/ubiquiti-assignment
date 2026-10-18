@@ -10,7 +10,7 @@ nonisolated protocol ImageLoader: Sendable {
     /// The product's image at `size`: from memory, else disk, else the CDN, then cached.
     ///
     /// Concurrent calls for one product and size share a single download. Cancelling the task that awaits this
-    /// cancels the download and throws `ImageError.cancelled`; a view model ignores that case. Any other failure is
-    /// one the screen shows as the failure image.
+    /// stops waiting and throws `ImageError.cancelled`; the download is cancelled once no caller awaits it. A view
+    /// model ignores that case. Any other failure is one the screen shows as the failure image.
     func image(for product: Product, size: ImageSize) async throws(ImageError) -> UIImage
 }
