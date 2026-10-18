@@ -13,6 +13,16 @@ func settles(
     await settles(viewModel, within: timeout) { $0.state == expected }
 }
 
+/// `settles(_:at:within:)` for the details view model, whose state holds one product.
+@MainActor
+func settles(
+    _ viewModel: ProductDetailViewModel,
+    at expected: LoadState<Product>,
+    within timeout: Duration = Settling.deadline,
+) async -> Bool {
+    await settles(viewModel, within: timeout) { $0.state == expected }
+}
+
 /// Whether the view model satisfies `condition` before the deadline. For an end state that spans more than `state`:
 /// the feed task and the refresh task each send into their own subject, in an order the scheduler picks, so a state
 /// can land before or after `isRefreshing` clears.
@@ -20,10 +30,10 @@ func settles(
 /// Each check is followed by a sleep, not a `Task.yield()`: a yield re-enqueues at once and keeps the main thread
 /// busy, which on a loaded CI runner starved the repository actor the feed task was waiting on past the deadline.
 @MainActor
-func settles(
-    _ viewModel: ProductListViewModel,
+func settles<ViewModel: AnyObject>(
+    _ viewModel: ViewModel,
     within timeout: Duration = Settling.deadline,
-    until condition: (ProductListViewModel) -> Bool,
+    until condition: (ViewModel) -> Bool,
 ) async -> Bool {
     let deadline = ContinuousClock.now + timeout
     while !condition(viewModel) {
