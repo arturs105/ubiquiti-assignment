@@ -59,7 +59,7 @@ final nonisolated class KingfisherImageLoader: ImageLoader, Sendable {
         } catch {
             // `retrieveImage` documents `KingfisherError` as its only other failure. Anything else is wrapped so
             // the failure type stays `ImageError` and the original error is still inspectable.
-            throw .network(.network(URLError(.unknown, userInfo: [NSUnderlyingErrorKey: error])))
+            throw Self.unknownNetworkError(wrapping: error)
         }
         Logger.images.debug("""
         \(String(describing: size), privacy: .public) image for \(product.id, privacy: .public) from \
@@ -90,11 +90,16 @@ final nonisolated class KingfisherImageLoader: ImageLoader, Sendable {
 
     private static func imageError(fromSession underlying: any Error) -> ImageError {
         guard let urlError = underlying as? URLError else {
-            return .network(.network(URLError(.unknown, userInfo: [NSUnderlyingErrorKey: underlying])))
+            return unknownNetworkError(wrapping: underlying)
         }
         // The session reports a cancelled task as `URLError.cancelled` when the cancel lands before Kingfisher's
         // own bookkeeping does; it is the same cancellation to the caller.
         return urlError.code == .cancelled ? .cancelled : .network(.network(urlError))
+    }
+
+    /// A failure that is not a `URLError`, as a transport error the screen can show, with the original underneath.
+    private static func unknownNetworkError(wrapping error: any Error) -> ImageError {
+        .network(.network(URLError(.unknown, userInfo: [NSUnderlyingErrorKey: error])))
     }
 }
 
