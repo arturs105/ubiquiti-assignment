@@ -4,9 +4,10 @@ import OSLog
 /// The two cache files: `feed.json`, the downloaded bytes verbatim, and `validators.json` beside them. Every
 /// method here runs on the actor, so reads and writes never interleave.
 extension CachedFeedRepository {
-    /// The pair on disk, or `nil` after recovering from whatever is wrong with it. Missing validators are not
-    /// wrong: the feed loads and the next request is unconditional. A missing, unreadable or undecodable feed is:
-    /// both files go, because validators are never sent when nothing could be confirmed by a 304.
+    /// The pair on disk, or `nil` when there is none or after recovering from whatever is wrong with it. A missing
+    /// feed is no cache: only validators left behind on their own are removed. Missing validators are not wrong
+    /// either: the feed loads and the next request is unconditional. An unreadable or undecodable feed is: both
+    /// files go, because validators are never sent when nothing could be confirmed by a 304.
     func readCachedFeed() -> CachedFeed? {
         guard let data = readFeedFile() else { return nil }
         let feed: Feed
