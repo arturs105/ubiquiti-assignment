@@ -13,10 +13,16 @@ final nonisolated class StubURLProtocol: URLProtocol {
         case failure(URLError)
         /// Never answers, so a test can cancel the task that waits on it.
         case hang
+        /// Answers like `http` once `release(_:)` is called for the URL, so a test can start several callers
+        /// against one request before it completes.
+        case held(status: Int, body: Data = Data())
     }
 
     private static let scripts = Mutex<[URL: Script]>([:])
     private static let requests = Mutex<[URL: [URLRequest]]>([:])
+    private static let released = Mutex<Set<URL>>([])
+    /// How often a held request checks whether it was released, in seconds.
+    private static let releasePollInterval: TimeInterval = 0.01
 
     /// The production feed configuration with every request routed through the stub.
     static func session() -> URLSession {
@@ -47,6 +53,11 @@ final nonisolated class StubURLProtocol: URLProtocol {
         requests.withLock { $0[url]?.count ?? 0 }
     }
 
+    /// Lets every `held` request for `url` answer.
+    static func release(_ url: URL) {
+        _ = released.withLock { $0.insert(url) }
+    }
+
     // MARK: - URLProtocol
 
     override class func canInit(with request: URLRequest) -> Bool { true }
@@ -62,15 +73,7 @@ final nonisolated class StubURLProtocol: URLProtocol {
         }
         switch script {
         case let .http(status, headers, body):
-            let response = HTTPURLResponse(
-                url: url,
-                statusCode: status,
-                httpVersion: "HTTP/1.1",
-                headerFields: headers,
-            )!
-            client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client.urlProtocol(self, didLoad: body)
-            client.urlProtocolDidFinishLoading(self)
+            answer(status: status, headers: headers, body: body, url: url, client: client)
         case .nonHTTP:
             let response = URLResponse(url: url, mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
             client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -79,8 +82,33 @@ final nonisolated class StubURLProtocol: URLProtocol {
             client.urlProtocol(self, didFailWithError: error)
         case .hang:
             break
+        case .held:
+            answerWhenReleased()
         }
     }
 
-    override func stopLoading() {}
+    override func stopLoading() {
+        NSObject.cancelPreviousPerformRequests(withTarget: self)
+    }
+
+    // MARK: - Private helpers
+
+    /// Checks on the loading thread's run loop, where `URLProtocol` expects its client to be called, until the
+    /// test releases the URL; a cancelled request stops the checks in `stopLoading()`.
+    @objc private func answerWhenReleased() {
+        guard let client, let url = request.url, case let .held(status, body) = Self.scripts.withLock({ $0[url] })
+        else { return }
+        guard Self.released.withLock({ $0.contains(url) }) else {
+            perform(#selector(answerWhenReleased), with: nil, afterDelay: Self.releasePollInterval)
+            return
+        }
+        answer(status: status, headers: [:], body: body, url: url, client: client)
+    }
+
+    private func answer(status: Int, headers: [String: String], body: Data, url: URL, client: any URLProtocolClient) {
+        let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: headers)!
+        client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client.urlProtocol(self, didLoad: body)
+        client.urlProtocolDidFinishLoading(self)
+    }
 }
