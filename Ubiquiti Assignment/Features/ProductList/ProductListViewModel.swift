@@ -12,8 +12,8 @@ import Foundation
 final class ProductListViewModel {
     /// What the screen shows.
     private(set) var state: LoadState<[Product]> = .loading
-    /// Why the list on screen is stale: the refresh behind it failed. `nil` while there is nothing on screen, since
-    /// the failure is then the state itself.
+    /// Why the list on screen is stale: the refresh behind it failed. `nil` while the list has no rows, since the
+    /// failure is then the state itself.
     private(set) var staleError: FeedError?
     /// A refresh is in flight; the stale banner shows a spinner in place of Retry.
     private(set) var isRefreshing = false
@@ -42,7 +42,7 @@ final class ProductListViewModel {
         .store(in: &cancellables)
 
         Publishers.CombineLatest(feed, refreshFailure)
-            .map { feed, failure in feed == nil ? nil : failure }
+            .map { feed, failure in Self.visibleProducts(in: feed).isEmpty ? nil : failure }
             .removeDuplicates()
             .sink { [weak self] error in self?.staleError = error }
             .store(in: &cancellables)
@@ -104,15 +104,18 @@ final class ProductListViewModel {
     }
 
     private static func state(feed: Feed?, isRefreshing: Bool, failure: FeedError?) -> LoadState<[Product]> {
-        guard let feed else {
-            // Nothing to show: the failure stands until a retry is under way, which reads as loading again.
-            if let failure, !isRefreshing {
-                return .failed(failure)
-            }
-            return .loading
+        let products = visibleProducts(in: feed)
+        guard products.isEmpty else { return .loaded(products) }
+        // No rows to keep on screen, cached or not: the failure is the state until a retry is under way, which
+        // reads as loading again. An empty list over a failed refresh would claim the catalogue is empty.
+        if let failure {
+            return isRefreshing ? .loading : .failed(failure)
         }
-        // The feed's two placeholder entries decode like any product; hiding them is this screen's rule.
-        let products = feed.products.filter { $0.line.id != .unknown }
-        return products.isEmpty ? .empty : .loaded(products)
+        return feed == nil ? .loading : .empty
+    }
+
+    /// The feed's two placeholder entries decode like any product; hiding them is this screen's rule.
+    private static func visibleProducts(in feed: Feed?) -> [Product] {
+        feed?.products.filter { $0.line.id != .unknown } ?? []
     }
 }

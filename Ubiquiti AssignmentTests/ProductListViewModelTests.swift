@@ -101,6 +101,20 @@ struct ProductListViewModelTests {
         #expect(await settles(viewModel, at: .empty))
     }
 
+    @Test(arguments: [
+        Feed(version: "empty", products: []),
+        Feed(version: "placeholders", products: [Product.placeholder]),
+    ])
+    func aRefreshThatFailsOverAListWithNoRowsIsAnError(cached: Feed) async {
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: cached, error: offline))
+
+        viewModel.load()
+        await viewModel.refresh()
+
+        #expect(await settles(viewModel, at: .failed(offline)))
+        #expect(viewModel.staleError == nil)
+    }
+
     @Test func anUpdateNobodyOnScreenAskedForReplacesTheList() async {
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
         let viewModel = ProductListViewModel(repository: repository)
