@@ -52,7 +52,7 @@ The feed repository owns its cache: raw feed bytes and validators as two files i
 - `// MARK: -` separates lifecycle, public API, private helpers.
 - Models are `Codable`, `Hashable`, `Identifiable`, `Sendable`. Decoding uses `CodingKeys` only when JSON names differ from Swift names.
 - Guard-return early. No nesting deeper than three levels.
-- Magic numbers and strings live in `enum Constants` or design tokens, never inline twice.
+- Magic numbers and strings live in `enum Constants` or design tokens, never inline twice. Every `Constants` enum is `nonisolated`, in Core and in views alike: it holds only `Sendable` literals and reads the same from any isolation.
 - Comments explain *why*. Code explains *what*. Write doc comments (`///`) on every public type and protocol requirement.
 
 ## SwiftUI
@@ -62,6 +62,7 @@ The feed repository owns its cache: raw feed bytes and validators as two files i
 - Design tokens (`UI/Theme/`) hold colours, spacing, type ramp pulled from Figma. Views use tokens, never literal values.
 - Accessibility: every image has a label or is `.accessibilityHidden(true)`; tappable rows have one accessibility element.
 - Navigation through `NavigationStack` with a `Hashable` route value, not `NavigationLink(destination:)`.
+- One `Dependencies` value, built once by the App, is the composition root. `RootView` takes it by initialiser, owns the `NavigationStack` path and the single `navigationDestination(for: Route.self)`, and is the only place screens are built. A screen owns its view model: the root (for the list) or the destination closure (for details) builds the view model from `Dependencies` and passes it to the view's initialiser, which keeps it as `@State`. `RootView.body` and the destination closure re-run on every path change, so the view model built there is allocated again on each render and `@State` keeps only the first: a view model's `init` only stores its dependencies and wires its Combine pipelines, and any `Task` or `feed()` subscription starts from `load()` in the view's `.task`. `Dependencies` never enters `Features/`, and a screen knows nothing about the stack it sits in, so it previews and reuses in isolation.
 
 ## Tests
 
