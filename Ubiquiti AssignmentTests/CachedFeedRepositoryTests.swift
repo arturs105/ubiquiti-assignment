@@ -335,6 +335,24 @@ final class CachedFeedRepositoryTests {
         #expect(try await feeds.collect() == [feed(v1)])
     }
 
+    @Test func aFailedFeedWriteLeavesNoOldValidatorsBehind() async throws {
+        // The old validators go before the new bytes are written: were the order reversed, a failed feed write
+        // would leave them beside a feed they do not describe, for a 304 to wrongly confirm. A non-empty directory
+        // put where the feed file is, after the cache has been read, makes the write fail.
+        try seed(bytes: v1, validators: validators1)
+        let obstruct = feedFileURL
+        let client = SideEffectFeedClient(response: .updated(data: v2, validators: validators2)) {
+            try? FileManager.default.removeItem(at: obstruct)
+            try? FileManager.default.createDirectory(at: obstruct, withIntermediateDirectories: false)
+            try? Data().write(to: obstruct.appending(path: "occupied"))
+        }
+
+        let outcome = try await repository(client).refresh()
+
+        #expect(try outcome == .updated(feed(v2)))
+        #expect(FileManager.default.fileExists(atPath: validatorsFileURL.path) == false)
+    }
+
     @Test func aLateSubscriberStartsFromTheLastSavedFeed() async throws {
         // Nothing to catch up on by hand: the stream opens with whatever the earlier refresh left on disk.
         var repository: CachedFeedRepository? = repository(RecordingFeedClient(results: [
@@ -420,7 +438,7 @@ final class CachedFeedRepositoryTests {
         CachedFeedRepository(client: InMemoryFeedClient(result: result), directory: directory)
     }
 
-    private func repository(_ client: RecordingFeedClient) -> CachedFeedRepository {
+    private func repository(_ client: any FeedClient) -> CachedFeedRepository {
         CachedFeedRepository(client: client, directory: directory)
     }
 
@@ -434,5 +452,17 @@ final class CachedFeedRepositoryTests {
 
     private func cachedValidators() throws -> Validators {
         try JSONDecoder().decode(Validators.self, from: Data(contentsOf: validatorsFileURL))
+    }
+}
+
+/// Runs `sideEffect` during the fetch, after the repository has read its cache and before it writes, then answers
+/// `response`. For changing the disk under a refresh in flight.
+private nonisolated struct SideEffectFeedClient: FeedClient {
+    let response: FeedResponse
+    let sideEffect: @Sendable () -> Void
+
+    func fetch(validators _: Validators) async throws(NetworkError) -> FeedResponse {
+        sideEffect()
+        return response
     }
 }
