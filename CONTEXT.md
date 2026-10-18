@@ -25,7 +25,7 @@ A product's functional kind as the feed reports it (camera, switch, sensor, cons
 _Avoid_: Kind, type
 
 **Placeholder product**:
-One of the two feed entries under the `unknown` line ("Unknown Device", "Unknown Console"). They decode like any product; hiding them is a display rule, not a decoding rule.
+One of the two feed entries under the `unknown` line ("Unknown Device", "Unknown Console"). They decode like any product; hiding them is a display rule, not a decoding rule, applied in the product list view model's pipeline.
 
 **Validators**:
 What the server handed back with the last feed download so the app can ask whether the feed changed: the `ETag` and `Last-Modified` values, kept verbatim. Sent back on the next request; an "unchanged" answer means the stored feed is still current. Not the fingerprint: the fingerprint is inside the feed, validators are about the download.
