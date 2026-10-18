@@ -41,7 +41,7 @@ struct ProductListView: View {
         case let .loaded(products):
             ProductListContent(
                 products: products,
-                staleError: viewModel.staleError,
+                isStale: viewModel.staleError != nil,
                 isRefreshing: viewModel.isRefreshing,
                 refresh: viewModel.refresh,
                 retry: viewModel.retry,

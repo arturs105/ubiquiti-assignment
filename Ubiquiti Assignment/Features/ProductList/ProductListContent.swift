@@ -5,26 +5,26 @@ import SwiftUI
 /// Pull to refresh awaits the view model's refresh, so the system indicator ends when the server has answered.
 struct ProductListContent: View {
     private let products: [Product]
-    private let staleError: FeedError?
+    private let isStale: Bool
     private let isRefreshing: Bool
     private let refresh: @Sendable () async -> Void
     private let retry: () -> Void
 
     /// - Parameters:
     ///   - products: The rows, in feed order.
-    ///   - staleError: Why the rows are stale, or `nil` when they are current.
+    ///   - isStale: Whether the refresh behind the rows failed; the stale banner then shows above them.
     ///   - isRefreshing: Whether a refresh is in flight; the banner then shows a spinner in place of Retry.
     ///   - refresh: Runs on pull to refresh and returns when the server has answered.
     ///   - retry: Runs when the banner's Retry is tapped.
     init(
         products: [Product],
-        staleError: FeedError?,
+        isStale: Bool,
         isRefreshing: Bool,
         refresh: @escaping @Sendable () async -> Void,
         retry: @escaping () -> Void,
     ) {
         self.products = products
-        self.staleError = staleError
+        self.isStale = isStale
         self.isRefreshing = isRefreshing
         self.refresh = refresh
         self.retry = retry
@@ -46,8 +46,9 @@ struct ProductListContent: View {
         .background(.backgroundSecondary)
         .refreshable(action: refresh)
         .safeAreaInset(edge: .top) {
-            if staleError != nil {
-                StaleDataBanner(isLoading: isRefreshing, retry: isRefreshing ? nil : retry)
+            if isStale {
+                // The banner shows its spinner in place of Retry while `isLoading`, so Retry needs no gating here.
+                StaleDataBanner(isLoading: isRefreshing, retry: retry)
                     .padding(.horizontal, Spacing.large)
                     .padding(.top, Spacing.small)
             }
@@ -59,7 +60,7 @@ struct ProductListContent: View {
     NavigationStack {
         ProductListContent(
             products: Product.previews,
-            staleError: nil,
+            isStale: false,
             isRefreshing: false,
             refresh: {},
             retry: {},
@@ -72,8 +73,21 @@ struct ProductListContent: View {
     NavigationStack {
         ProductListContent(
             products: Product.previews,
-            staleError: .network(.network(URLError(.notConnectedToInternet))),
+            isStale: true,
             isRefreshing: false,
+            refresh: {},
+            retry: {},
+        )
+        .navigationTitle("Products")
+    }
+}
+
+#Preview("Stale, refreshing") {
+    NavigationStack {
+        ProductListContent(
+            products: Product.previews,
+            isStale: true,
+            isRefreshing: true,
             refresh: {},
             retry: {},
         )
