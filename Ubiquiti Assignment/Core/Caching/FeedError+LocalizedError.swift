@@ -5,7 +5,7 @@ import Foundation
 /// The descriptions are the technical ones: the transport's `URLError` text, the HTTP status, the decoder's
 /// message. #15 replaces this with a presentation-layer `DisplayError` and the conformance goes with it.
 extension FeedError: LocalizedError {
-    var errorDescription: String? {
+    nonisolated var errorDescription: String? {
         switch self {
         case let .network(.network(error)): error.localizedDescription
         case let .network(.httpStatus(status)): "The server answered with HTTP \(status)."
