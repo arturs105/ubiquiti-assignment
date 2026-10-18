@@ -6,8 +6,7 @@ import Foundation
 /// Inputs enter as subjects: the feed the repository streams, whether a refresh is in flight, and how the last
 /// refresh ended. The screen state is a `CombineLatest` over the three and the stale error over two of them, so
 /// no intent method computes a state by hand; see the Concurrency and Combine section of `docs/CODING_STANDARDS.md`.
-/// `init` only wires the pipeline;
-/// `load()` starts the subscription and the first refresh.
+/// `init` only wires the pipeline; `load()` starts the subscription and the first refresh.
 @Observable
 final class ProductListViewModel {
     /// What the screen shows.

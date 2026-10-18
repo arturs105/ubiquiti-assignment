@@ -6,7 +6,7 @@ import SwiftUI
 /// receive their view model by initialiser and know nothing about the stack; see the SwiftUI section of
 /// `docs/CODING_STANDARDS.md`.
 struct RootView: View {
-    /// #11 builds the details view model from it in `destination(for:)`.
+    /// What `body` builds the list view model from; #11 builds the details view model from it in `destination(for:)`.
     private let dependencies: Dependencies
     @State private var path: [Route] = []
 

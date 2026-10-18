@@ -41,7 +41,7 @@ The feed repository owns its cache: raw feed bytes and validators as two files i
 ## Errors
 
 - Services throw typed errors (`enum NetworkError: Error`). Never `fatalError`, never force unwrap, never `try!` outside tests.
-- One `DisplayError` mapper turns any `Error` into `title` + `message` + optional retry. Views show only `DisplayError`.
+- One `DisplayError` mapper turns any `Error` into `title` + `message` + optional retry. Views show only `DisplayError` (from #15; until then `LoadState.failed` carries `FeedError`, see Architecture).
 
 ## Swift
 
