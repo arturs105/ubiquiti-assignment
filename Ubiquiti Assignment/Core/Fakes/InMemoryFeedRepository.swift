@@ -2,19 +2,28 @@ import Foundation
 
 /// A `FeedRepository` that replays a scripted cached feed and refresh outcome, for view model tests and previews.
 ///
+/// The script is either an outcome every refresh ends in or, through `neverAnswering(cached:)`, a refresh that
+/// stays in flight until the task awaiting it is cancelled, for a loading preview and for asserting what shows
+/// before the server answers.
+///
 /// An actor, like the production repository, because it keeps the same list of `feed()` subscribers: an updated
 /// refresh reaches them as it would in production, and `publish(_:)` lets a test push a feed nobody on screen asked
 /// for, as a background refresh or a push notification would. Like production, a saved feed becomes the cached one,
 /// so a later subscriber starts from it.
 actor InMemoryFeedRepository: FeedRepository {
     private var cached: Feed?
-    private let result: Result<FeedRefresh, FeedError>
+    /// How every refresh ends; `nil` when it never does.
+    private let result: Result<FeedRefresh, FeedError>?
     private var subscribers: [UUID: AsyncStream<Feed?>.Continuation] = [:]
+
+    private init(cached: Feed?, script result: Result<FeedRefresh, FeedError>?) {
+        self.cached = cached
+        self.result = result
+    }
 
     /// A repository holding `cached` (or nothing) whose every refresh ends in `result`.
     init(cached: Feed? = nil, result: Result<FeedRefresh, FeedError>) {
-        self.cached = cached
-        self.result = result
+        self.init(cached: cached, script: result)
     }
 
     /// A repository holding `cached` (or nothing) whose every refresh returns `refresh`.
@@ -25,6 +34,12 @@ actor InMemoryFeedRepository: FeedRepository {
     /// A repository holding `cached` (or nothing) whose every refresh throws `error`.
     init(cached: Feed? = nil, error: FeedError) {
         self.init(cached: cached, result: .failure(error))
+    }
+
+    /// A repository holding `cached` (or nothing) whose every refresh stays in flight until its task is cancelled,
+    /// then throws the cancellation as the transport would.
+    static func neverAnswering(cached: Feed? = nil) -> InMemoryFeedRepository {
+        InMemoryFeedRepository(cached: cached, script: nil)
     }
 
     deinit {
@@ -46,7 +61,8 @@ actor InMemoryFeedRepository: FeedRepository {
         return stream
     }
 
-    func refresh() throws(FeedError) -> FeedRefresh {
+    func refresh() async throws(FeedError) -> FeedRefresh {
+        guard let result else { try await waitForCancellation() }
         let outcome = try result.get()
         switch outcome {
         case .unchanged where cached == nil:
@@ -75,5 +91,23 @@ actor InMemoryFeedRepository: FeedRepository {
 
     private func forget(_ id: UUID) {
         subscribers[id] = nil
+    }
+
+    private func waitForCancellation() async throws(FeedError) -> Never {
+        // `Task.sleep` throws as soon as the task is cancelled, so the loop only restarts a sleep that ran out.
+        while true {
+            do {
+                try await Task.sleep(for: Constants.sleep)
+            } catch {
+                throw .network(.network(URLError(.cancelled)))
+            }
+        }
+    }
+}
+
+extension InMemoryFeedRepository {
+    private nonisolated enum Constants {
+        /// How long one wait for cancellation sleeps before starting the next; any length works.
+        static let sleep: Duration = .seconds(3600)
     }
 }

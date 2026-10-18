@@ -87,6 +87,6 @@ struct ProductListView: View {
 
 #Preview("Loading") {
     NavigationStack {
-        ProductListView(viewModel: ProductListViewModel(repository: NeverAnsweringFeedRepository()))
+        ProductListView(viewModel: ProductListViewModel(repository: InMemoryFeedRepository.neverAnswering()))
     }
 }
