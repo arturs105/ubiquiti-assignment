@@ -17,7 +17,6 @@ struct ProductListView: View {
 
     var body: some View {
         content
-            .navigationTitle("Products")
             .task { viewModel.load() }
     }
 
