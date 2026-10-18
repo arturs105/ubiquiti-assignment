@@ -369,7 +369,7 @@ final class CachedFeedRepositoryTests {
         #expect(try collected == [feed(v2)])
     }
 
-    @Test func aCancelledSubscriptionIsForgottenAndLaterUpdatesStillReachTheOthers() async throws {
+    @Test func cancellingOneSubscriptionLeavesTheOthersReceivingUpdates() async throws {
         var repository: CachedFeedRepository? = repository(.success(.updated(data: v1, validators: validators1)))
         let cancelled = try await #require(repository).feed()
         let kept = try await #require(repository).feed()
