@@ -105,14 +105,12 @@ struct ProductListViewModelTests {
         Feed(version: "empty", products: []),
         Feed(version: "placeholders", products: [Product.placeholder]),
     ])
-    func aRefreshThatFailsOverAListWithNoRowsIsAnError(cached: Feed) async {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: cached, error: offline))
+    func aRefreshThatFailsOverAListWithNoRowsIsAnError(feed: Feed) {
+        // Through the view model, no feed and a failure is `.failed` too, so a state reached before the cached feed
+        // lands would pass without exercising this mapping; the mapping is asserted on its own instead.
+        let state = ProductListViewModel.state(feed: feed, isRefreshing: false, failure: offline)
 
-        viewModel.load()
-        await viewModel.refresh()
-
-        #expect(await settles(viewModel, at: .failed(offline)))
-        #expect(viewModel.staleError == nil)
+        #expect(state == .failed(offline))
     }
 
     @Test func anUpdateNobodyOnScreenAskedForReplacesTheList() async {

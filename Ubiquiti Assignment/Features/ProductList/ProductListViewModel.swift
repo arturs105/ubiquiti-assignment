@@ -109,7 +109,9 @@ final class ProductListViewModel {
         return task
     }
 
-    private static func state(feed: Feed?, isRefreshing: Bool, failure: FeedError?) -> LoadState<[Product]> {
+    /// The state pipeline's `map`, internal so tests can pin a mapping whose inputs arrive through two tasks in an
+    /// order the scheduler picks.
+    static func state(feed: Feed?, isRefreshing: Bool, failure: FeedError?) -> LoadState<[Product]> {
         let products = visibleProducts(in: feed)
         guard products.isEmpty else { return .loaded(products) }
         // No rows to keep on screen, cached or not: the failure is the state until a retry is under way, which
