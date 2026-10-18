@@ -149,6 +149,32 @@ final class CachedFeedRepositoryTests {
         #expect(FileManager.default.fileExists(atPath: validatorsFileURL.path) == false)
     }
 
+    @Test(arguments: [Data("not json".utf8), Data(#"{"version": 1}"#.utf8), Data(#"{"devices": []}"#.utf8)])
+    func refreshAloneTreatsAnUndecodableFeedFileAsNoCache(bytes: Data) async throws {
+        // refresh() checks only the feed's top level; it must reject exactly what feed() rejects.
+        try seed(bytes: bytes, validators: validators1)
+        let client = RecordingFeedClient(result: .failure(.httpStatus(500)))
+        let repository = repository(client)
+
+        await #expect(throws: FeedError.network(.httpStatus(500))) {
+            try await repository.refresh()
+        }
+
+        #expect(client.receivedValidators == [.empty])
+        #expect(FileManager.default.fileExists(atPath: feedFileURL.path) == false)
+        #expect(FileManager.default.fileExists(atPath: validatorsFileURL.path) == false)
+    }
+
+    @Test func refreshAloneSendsTheValidatorsBesideAFeedWithBrokenProducts() async throws {
+        // Products decode leniently, so a feed whose products are all broken is still a feed.
+        try seed(bytes: Data(#"{"version": "v1", "devices": [1, "two"]}"#.utf8), validators: validators1)
+        let client = RecordingFeedClient(result: .success(.unchanged))
+
+        _ = try await repository(client).refresh()
+
+        #expect(client.receivedValidators == [validators1])
+    }
+
     @Test func anUnreadableFeedFileIsNoCacheAndBothFilesAreDeleted() async throws {
         // A directory where the file should be: exists, cannot be read as data.
         try seed(bytes: nil, validators: validators1)

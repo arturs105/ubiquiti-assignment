@@ -50,9 +50,10 @@ actor CachedFeedRepository: FeedRepository {
     }
 
     func refresh() async throws(FeedError) -> FeedRefresh {
-        // Read, not remembered: validators are only ever sent beside a feed that decodes, and reading the pair is
-        // what proves that. Milliseconds for one feed, on the actor, off the main actor.
-        let validators = readCachedFeed()?.validators ?? .empty
+        // Read, not remembered: validators are only ever sent beside a feed that decodes, and reading the file is
+        // what proves that. The header, not the whole feed: `feed()` has already decoded the products this load.
+        let cached = readCachedHeader()
+        let validators = cached?.validators ?? .empty
         let response: FeedResponse
         do {
             response = try await client.fetch(validators: validators)
@@ -101,6 +102,12 @@ extension CachedFeedRepository {
     /// The pair on disk, decoded: the feed and the validators that came with its bytes.
     nonisolated struct CachedFeed: Sendable {
         let feed: Feed
+        let validators: Validators
+    }
+
+    /// What a refresh reads from the cache: the cached feed's version and its validators, without its products.
+    nonisolated struct CachedHeader: Sendable {
+        let version: String
         let validators: Validators
     }
 

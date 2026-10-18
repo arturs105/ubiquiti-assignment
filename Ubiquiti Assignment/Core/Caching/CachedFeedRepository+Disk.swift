@@ -8,10 +8,7 @@ extension CachedFeedRepository {
     /// wrong: the feed loads and the next request is unconditional. A missing, unreadable or undecodable feed is:
     /// both files go, because validators are never sent when nothing could be confirmed by a 304.
     func readCachedFeed() -> CachedFeed? {
-        guard let data = try? Data(contentsOf: feedFileURL) else {
-            recover(reason: "no readable \(Constants.feedFile)")
-            return nil
-        }
+        guard let data = readFeedFile() else { return nil }
         let feed: Feed
         do {
             feed = try Self.decodeFeed(data)
@@ -25,6 +22,21 @@ extension CachedFeedRepository {
         validators \(validators.isConditional ? "present" : "absent", privacy: .public)
         """)
         return CachedFeed(feed: feed, validators: validators)
+    }
+
+    /// What a refresh needs from the cache: the cached feed's version and the validators saved beside it, under the
+    /// same recovery rules as `readCachedFeed()`. Proves the file is a feed without decoding its products, so a load
+    /// (`feed()` then `refresh()`) decodes the cached products once and logs the lenient decoder's drops once.
+    func readCachedHeader() -> CachedHeader? {
+        guard let data = readFeedFile() else { return nil }
+        let header: FeedHeader
+        do {
+            header = try JSONDecoder().decode(FeedHeader.self, from: data)
+        } catch {
+            recover(reason: "\(Constants.feedFile) does not decode: \(error)")
+            return nil
+        }
+        return CachedHeader(version: header.version, validators: readValidators())
     }
 
     /// Writes the download as both files, each atomically (temporary file then rename), so a crash mid-write leaves
@@ -47,6 +59,15 @@ extension CachedFeedRepository {
     }
 
     // MARK: - Private helpers
+
+    /// The cached feed's bytes, or `nil` after recovering from a missing or unreadable file.
+    private func readFeedFile() -> Data? {
+        guard let data = try? Data(contentsOf: feedFileURL) else {
+            recover(reason: "no readable \(Constants.feedFile)")
+            return nil
+        }
+        return data
+    }
 
     /// `Validators.empty` when the file is missing or broken: the feed still loads, the next request is unconditional.
     private func readValidators() -> Validators {
@@ -77,5 +98,22 @@ extension CachedFeedRepository {
 
     private var validatorsFileURL: URL {
         directory.appending(path: Constants.validatorsFile)
+    }
+
+    /// The top level of a feed document: decodes exactly when `Feed` does, because `Feed` decodes each product
+    /// leniently and only fails on a missing `version` or a `devices` value that is not an array.
+    private nonisolated struct FeedHeader: Decodable {
+        let version: String
+
+        private enum CodingKeys: String, CodingKey {
+            case version
+            case devices
+        }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            version = try container.decode(String.self, forKey: .version)
+            _ = try container.nestedUnkeyedContainer(forKey: .devices)
+        }
     }
 }
