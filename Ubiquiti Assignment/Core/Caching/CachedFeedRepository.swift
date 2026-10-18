@@ -90,7 +90,8 @@ actor CachedFeedRepository: FeedRepository {
             }
             // The caller waits on the write: milliseconds, and the cached feed is already on screen by then.
             write(Download(data: data, validators: validators))
-            // Subscribers hear of a feed only once it is saved, so what they show is what disk holds.
+            // Subscribers hear of a feed only after the save is attempted, so what they show is what disk holds unless
+            // the write failed, which is logged and does not keep the feed from the screen.
             for continuation in subscribers.values {
                 continuation.yield(feed)
             }

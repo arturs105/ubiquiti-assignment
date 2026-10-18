@@ -321,6 +321,20 @@ final class CachedFeedRepositoryTests {
         #expect(try collected == [feed(v1)])
     }
 
+    @Test func aFailedWriteStillReachesTheCallerAndEverySubscriber() async throws {
+        // A file where the cache directory should be: nothing can be saved, and the user still gets the feed.
+        try Data().write(to: directory)
+        var repository: CachedFeedRepository? = repository(.success(.updated(data: v1, validators: validators1)))
+        let feeds = try await #require(repository).feed()
+        #expect(await feeds.firstElement() == .some(nil))
+
+        let outcome = try await repository?.refresh()
+        repository = nil
+
+        #expect(try outcome == .updated(feed(v1)))
+        #expect(try await feeds.collect() == [feed(v1)])
+    }
+
     @Test func aLateSubscriberStartsFromTheLastSavedFeed() async throws {
         // Nothing to catch up on by hand: the stream opens with whatever the earlier refresh left on disk.
         var repository: CachedFeedRepository? = repository(RecordingFeedClient(results: [

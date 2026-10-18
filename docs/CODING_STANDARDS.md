@@ -37,7 +37,7 @@ Core is async/await; Combine is the view model's derived-state pipeline. The ass
 
 ## Caching
 
-The feed repository owns its cache: raw feed bytes and validators as two files in the Caches directory, read by one `actor` on every call and never held in memory; a new `feed()` subscription opens with what is on disk, and hears of a downloaded feed only after it is written. No separate store protocol (see `docs/DECISIONS.md`). Images cache through `URLCache` configured once at app start. The cache read happens before the network call so the list renders from cache instantly and refreshes behind it; the disk write happens before `refresh()` returns, on the actor, so a returned feed is also a saved one.
+The feed repository owns its cache: raw feed bytes and validators as two files in the Caches directory, read by one `actor` on every call and never held in memory; a new `feed()` subscription opens with what is on disk, and hears of a downloaded feed only after its write is attempted. No separate store protocol (see `docs/DECISIONS.md`). Images cache through `URLCache` configured once at app start. The cache read happens before the network call so the list renders from cache instantly and refreshes behind it; the disk write happens before `refresh()` returns, on the actor, so a returned feed is also a saved one unless the write failed, which is logged and not surfaced.
 
 ## Errors
 
