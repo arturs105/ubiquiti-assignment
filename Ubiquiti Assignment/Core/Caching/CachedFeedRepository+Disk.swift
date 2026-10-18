@@ -39,13 +39,20 @@ extension CachedFeedRepository {
         return CachedHeader(version: header.version, validators: readValidators())
     }
 
-    /// Writes the download as both files, each atomically (temporary file then rename), so a crash mid-write leaves
-    /// the previous pair intact. Failures are logged and swallowed: the user has the feed already.
+    /// Writes the download as both files, each atomically (temporary file then rename). Two renames cannot be one, so
+    /// the old validators go first: a crash or a throw at any step leaves either the previous pair, the previous
+    /// feed alone, the new feed alone or the new pair. A feed without validators is a valid cache (the next request
+    /// is unconditional); new bytes beside old validators, which a 304 would wrongly confirm, never exist. Failures
+    /// are logged and swallowed: the user has the feed already.
     func write(_ download: Download) {
         do {
+            let validators = try JSONEncoder().encode(download.validators)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            if FileManager.default.fileExists(atPath: validatorsFileURL.path) {
+                try FileManager.default.removeItem(at: validatorsFileURL)
+            }
             try download.data.write(to: feedFileURL, options: .atomic)
-            try JSONEncoder().encode(download.validators).write(to: validatorsFileURL, options: .atomic)
+            try validators.write(to: validatorsFileURL, options: .atomic)
             let path = directory.path
             Logger.caching.info("Saved \(download.data.count) bytes and validators to \(path, privacy: .public)")
         } catch {
