@@ -68,38 +68,45 @@ final class ProductListViewModel {
                 feedSubject.send(feed)
             }
         }
-        refreshTask = startRefresh()
+        startRefresh()
     }
 
-    /// Asks the server for the feed and returns once it has answered; pull to refresh awaits it.
+    /// Asks the server for the feed and returns once it has answered; pull to refresh awaits it. A refresh already
+    /// in flight is joined, not restarted, so the pull's spinner ends when the server has answered.
     func refresh() async {
-        let task = startRefresh()
-        refreshTask = task
-        await task.value
+        await startRefresh().value
     }
 
     /// Asks the server again after a failure, without waiting; the Retry button calls it.
     func retry() {
-        refreshTask = startRefresh()
+        startRefresh()
     }
 
     // MARK: - Private helpers
 
+    /// The refresh in flight, or a new one when none is.
+    @discardableResult
     private func startRefresh() -> Task<Void, Never> {
-        refreshTask?.cancel()
+        if let refreshTask {
+            return refreshTask
+        }
         refreshingSubject.send(true)
-        return Task { [weak self, repository] in
+        let task = Task { [weak self, repository] in
             var failure: FeedError?
             do throws(FeedError) {
                 _ = try await repository.refresh()
             } catch {
                 failure = error
             }
-            // A cancelled refresh was replaced by a newer one, which owns the state from here.
-            guard let self, !Task.isCancelled else { return }
+            // Only `deinit` cancels a refresh, and by then there is no view model to update.
+            guard let self else { return }
+            refreshTask = nil
             refreshFailureSubject.send(failure)
             refreshingSubject.send(false)
         }
+        // The task cannot run before this assignment: both are on the main actor and this method does not suspend.
+        refreshTask = task
+        return task
     }
 
     private static func state(feed: Feed?, isRefreshing: Bool, failure: FeedError?) -> LoadState<[Product]> {

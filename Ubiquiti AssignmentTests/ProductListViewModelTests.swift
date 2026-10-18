@@ -142,5 +142,38 @@ struct ProductListViewModelTests {
         #expect(viewModel.isRefreshing == false)
     }
 
+    @Test func aPullWhileARefreshIsInFlightJoinsIt() async {
+        let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
+        let viewModel = ProductListViewModel(repository: repository)
+
+        viewModel.load()
+        await viewModel.refresh()
+
+        #expect(await repository.refreshCount == 1)
+        #expect(viewModel.isRefreshing == false)
+    }
+
+    @Test func aPullAfterARefreshHasEndedAsksAgain() async {
+        let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
+        let viewModel = ProductListViewModel(repository: repository)
+
+        viewModel.load()
+        await viewModel.refresh()
+        await viewModel.refresh()
+
+        #expect(await repository.refreshCount == 2)
+    }
+
+    @Test func loadingTwiceRefreshesOnce() async {
+        let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
+        let viewModel = ProductListViewModel(repository: repository)
+
+        viewModel.load()
+        viewModel.load()
+
+        #expect(await settles(viewModel) { $0.state == .loaded(Product.previews) && !$0.isRefreshing })
+        #expect(await repository.refreshCount == 1)
+    }
+
     private let offline = FeedError.network(.network(URLError(.notConnectedToInternet)))
 }

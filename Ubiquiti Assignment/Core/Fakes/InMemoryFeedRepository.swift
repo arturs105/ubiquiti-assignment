@@ -15,6 +15,8 @@ actor InMemoryFeedRepository: FeedRepository {
     /// How every refresh ends; `nil` when it never does.
     private let result: Result<FeedRefresh, FeedError>?
     private var subscribers: [UUID: AsyncStream<Feed?>.Continuation] = [:]
+    /// How many times `refresh()` has been called, so a test can tell a joined refresh from a second one.
+    private(set) var refreshCount = 0
 
     private init(cached: Feed?, script result: Result<FeedRefresh, FeedError>?) {
         self.cached = cached
@@ -62,6 +64,7 @@ actor InMemoryFeedRepository: FeedRepository {
     }
 
     func refresh() async throws(FeedError) -> FeedRefresh {
+        refreshCount += 1
         guard let result else { try await waitForCancellation() }
         let outcome = try result.get()
         switch outcome {
