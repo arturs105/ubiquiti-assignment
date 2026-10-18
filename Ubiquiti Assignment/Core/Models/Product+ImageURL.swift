@@ -6,8 +6,8 @@ nonisolated extension Product {
     /// Shape, from the assignment: `https://images.svc.ui.com/?u=<static image URL>&w=<width>&q=75`. The static
     /// image path carries the product id lowercased: the CDN answers 403 to the uppercase form `UUID.uuidString`
     /// produces (see `docs/DECISIONS.md`, 2026-10-15 "`Product.ID` is Foundation's `UUID`").
-    /// `URL.appending(queryItems:)`
-    /// leaves `:` and `/` in the inner URL bare; the CDN accepts both that and the percent-encoded form.
+    /// `URL.appending(queryItems:)` leaves `:` and `/` in the inner URL bare; the CDN accepts both that and the
+    /// percent-encoded form.
     func imageURL(size: ImageSize) -> URL {
         let source = "\(Constants.staticImageBase)/\(id.uuidString.lowercased())/default/\(defaultImageID).png"
         return Constants.imageService.appending(queryItems: [
