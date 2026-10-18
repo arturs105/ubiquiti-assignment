@@ -59,6 +59,14 @@ _Avoid_: Icon, picture, asset
 Which rendition of a product image a screen asks for: thumbnail or hero. The CDN resizes; the app never scales an image itself.
 _Avoid_: Resolution, width, variant
 
+**Image slot**:
+The place on a screen where a product image shows: a row's thumbnail square, the details hero. Shows a placeholder until the image arrives, then the image, or the failure image.
+_Avoid_: Image view (as the noun), picture frame
+
+**Failure image**:
+The symbol an image slot shows when its image could not be loaded. The same for every failure; the slot loads again when it reappears.
+_Avoid_: Error icon, broken image, fallback
+
 **Thumbnail**:
 The small product image shown in a list row.
 _Avoid_: Icon, preview, small image
