@@ -7,7 +7,13 @@ import UIKit
 @Suite(.timeLimit(.minutes(1)))
 final class KingfisherImageLoaderTests {
     private let directory = URL.temporaryDirectory.appending(path: UUID().uuidString)
-    private let png = UIImage.solid(.red, size: .thumbnail).pngData() ?? Data()
+    private let png: Data
+
+    /// Throws when the fixture image cannot be encoded, so a broken fixture fails here and not as a confusing
+    /// error in some test that downloads it.
+    init() throws {
+        png = try #require(UIImage.solid(.red, size: .thumbnail).pngData())
+    }
 
     deinit {
         try? FileManager.default.removeItem(at: directory)
