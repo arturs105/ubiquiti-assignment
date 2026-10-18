@@ -22,33 +22,41 @@ struct InMemoryFeedRepositoryTests {
         #expect(result == FeedLoad(cached: feed, refresh: .failure(.decoding("bad"))))
     }
 
-    @Test func anUpdatedRefreshReachesASubscriber() async {
-        let repository = InMemoryFeedRepository(refresh: .updated(feed))
-        let updates = await repository.updates()
-
-        _ = await repository.load()
-
-        #expect(await updates.firstElement() == feed)
+    @Test func theStreamOpensWithTheCachedFeedOrNil() async {
+        #expect(await InMemoryFeedRepository(cached: feed, refresh: .unchanged).feed().firstElement() == feed)
+        #expect(await InMemoryFeedRepository(refresh: .unchanged).feed().firstElement() == .some(nil))
     }
 
-    @Test func publishReachesASubscriberWithoutARefresh() async {
-        let repository = InMemoryFeedRepository(cached: feed, refresh: .unchanged)
-        let updates = await repository.updates()
-
-        await repository.publish(feed)
-
-        #expect(await updates.firstElement() == feed)
-    }
-
-    @Test func unchangedAndFailedRefreshesHandSubscribersNothing() async throws {
-        var repository: InMemoryFeedRepository? = InMemoryFeedRepository(cached: feed, error: .decoding("bad"))
-        let updates = try await #require(repository).updates()
+    @Test func anUpdatedRefreshFollowsTheCachedFeed() async throws {
+        var repository: InMemoryFeedRepository? = InMemoryFeedRepository(refresh: .updated(feed))
+        let feeds = try await #require(repository).feed()
+        #expect(await feeds.firstElement() == .some(nil))
 
         _ = await repository?.load()
         repository = nil
 
-        let collected = await updates.collect()
-        #expect(collected.isEmpty)
+        #expect(await feeds.collect() == [feed])
+    }
+
+    @Test func publishReachesASubscriberWithoutARefreshAndBecomesTheCachedFeed() async {
+        let repository = InMemoryFeedRepository(refresh: .unchanged)
+        let feeds = await repository.feed()
+        _ = await feeds.firstElement()
+
+        await repository.publish(feed)
+
+        #expect(await feeds.firstElement() == feed)
+        #expect(await repository.feed().firstElement() == feed)
+    }
+
+    @Test func unchangedAndFailedRefreshesHandSubscribersOnlyTheCachedFeed() async throws {
+        var repository: InMemoryFeedRepository? = InMemoryFeedRepository(cached: feed, error: .decoding("bad"))
+        let feeds = try await #require(repository).feed()
+
+        _ = await repository?.load()
+        repository = nil
+
+        #expect(await feeds.collect() == [feed])
     }
 
     private let feed = try! JSONDecoder().decode(Feed.self, from: Data(#"{"version": "v1", "devices": []}"#.utf8))

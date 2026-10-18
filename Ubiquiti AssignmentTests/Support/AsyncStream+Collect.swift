@@ -1,6 +1,6 @@
 import Foundation
 
-/// Reading a repository's `updates()` stream in a test without closures, which `#expect` cannot send across
+/// Reading a repository's `feed()` stream in a test without closures, which `#expect` cannot send across
 /// isolation.
 extension AsyncStream where Element: Sendable {
     /// The first element, or `nil` when the stream ends before one arrives.

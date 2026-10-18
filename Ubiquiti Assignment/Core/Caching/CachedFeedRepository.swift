@@ -1,21 +1,21 @@
 import Foundation
 import OSLog
 
-/// The production `FeedRepository`: the cached feed from disk, a conditional fetch that replaces it, and a stream
-/// of every feed that fetch saves.
+/// The production `FeedRepository`: one stream that starts with the cached feed from disk and continues with every
+/// feed a conditional fetch saves, and the fetch itself.
 ///
 /// Owns its cache. Two files under `directory` hold the last downloaded bytes and their validators (see
 /// `CachedFeedRepository+Disk.swift`). No feed is held in memory: every call starts from disk, so nothing held here
-/// can drift from what is saved. The only other state is the list of `updates()` subscribers, each a stream
+/// can drift from what is saved. The only other state is the list of `feed()` subscribers, each a stream
 /// continuation that is handed the feed right after it is written. Disk is read and written on the actor, off
 /// whatever task asked; the network call is the only suspension point. See `docs/DECISIONS.md`, "The repository
-/// holds no feed in memory" and "The repository streams updates".
+/// holds no feed in memory" and "One stream, not two calls".
 actor CachedFeedRepository: FeedRepository {
     private let client: any FeedClient
     /// Where the two cache files live. Internal so the disk extension can reach it.
     let directory: URL
-    /// One continuation per live `updates()` subscription, keyed so a cancelled one can be dropped.
-    private var subscribers: [UUID: AsyncStream<Feed>.Continuation] = [:]
+    /// One continuation per live `feed()` subscription, keyed so a cancelled one can be dropped.
+    private var subscribers: [UUID: AsyncStream<Feed?>.Continuation] = [:]
 
     /// - Parameters:
     ///   - client: the network seam the refresh goes through.
@@ -33,8 +33,20 @@ actor CachedFeedRepository: FeedRepository {
 
     // MARK: - FeedRepository
 
-    func cachedFeed() -> Feed? {
-        readCachedFeed()?.feed
+    func feed() -> AsyncStream<Feed?> {
+        // Newest-one buffering: a subscriber that is mid-render when two downloads land only wants the last, and a
+        // cached feed nobody has read yet is superseded the same way.
+        let (stream, continuation) = AsyncStream.makeStream(of: Feed?.self, bufferingPolicy: .bufferingNewest(1))
+        // Read and register in one actor turn: no refresh can save a feed between the two, so the subscriber sees
+        // what disk holds now and then every change, with no gap and no duplicate.
+        continuation.yield(readCachedFeed()?.feed)
+        let id = UUID()
+        subscribers[id] = continuation
+        continuation.onTermination = { [weak self] _ in
+            // Runs on whatever task cancelled the iteration; the dictionary is actor state, so hop back.
+            Task { await self?.forget(id) }
+        }
+        return stream
     }
 
     func refresh() async throws(FeedError) -> FeedRefresh {
@@ -76,18 +88,6 @@ actor CachedFeedRepository: FeedRepository {
             }
             return .updated(feed)
         }
-    }
-
-    func updates() -> AsyncStream<Feed> {
-        // Newest-one buffering: a subscriber that is mid-render when two downloads land only wants the last.
-        let (stream, continuation) = AsyncStream.makeStream(of: Feed.self, bufferingPolicy: .bufferingNewest(1))
-        let id = UUID()
-        subscribers[id] = continuation
-        continuation.onTermination = { [weak self] _ in
-            // Runs on whatever task cancelled the iteration; the dictionary is actor state, so hop back.
-            Task { await self?.forget(id) }
-        }
-        return stream
     }
 
     // MARK: - Private helpers

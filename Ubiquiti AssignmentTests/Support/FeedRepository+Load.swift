@@ -8,10 +8,10 @@ struct FeedLoad: Equatable {
 }
 
 extension FeedRepository {
-    /// One load as the view model runs it: the cached feed, then the refresh. Collected into one value so a test
-    /// asserts both in one expression.
+    /// One load as the view model runs it: subscribe, take the cached feed the stream opens with, then refresh.
+    /// Collected into one value so a test asserts both in one expression.
     func load() async -> FeedLoad {
-        let cached = await cachedFeed()
+        let cached = await feed().firstElement() ?? nil
         do {
             return try await FeedLoad(cached: cached, refresh: .success(refresh()))
         } catch {
