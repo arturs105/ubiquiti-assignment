@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// The product list: the feed's products under the selected tab, one row each, pushing the product's details on tap.
+/// The product list: the feed's products under the selected tab and the checked lines, one row each, pushing the
+/// product's details on tap.
 ///
-/// Switches over the view model's state so loading, empty and error each get their dedicated view. The tab bar sits
-/// above the list and the empty state, the two states a feed can produce, and not above loading or error, where
-/// there is nothing to filter. A list that is on screen while a refresh fails stays on screen with the stale banner
-/// above it; the view never decides what is stale, it only renders what the view model derived.
+/// Switches over the view model's state so loading, empty and error each get their dedicated view. The tab bar and
+/// the line filter button sit above the list and the empty state, the two states a feed can produce, and not above
+/// loading or error, where there is nothing to filter. A list that is on screen while a refresh fails stays on screen
+/// with the stale banner above it; the view never decides what is stale, it only renders what the view model derived.
 struct ProductListView: View {
     @State private var viewModel: ProductListViewModel
 
@@ -51,18 +52,32 @@ struct ProductListView: View {
         }
     }
 
+    /// Figma's "Tab Bar Container": the tabs stretching, the filter button fixed beside them, 8pt apart.
     private var tabBar: some View {
-        CategoryTabBar(selection: viewModel.selectedCategory) { viewModel.select(category: $0) }
-            .padding(.horizontal, Spacing.large)
-            .padding(.top, Spacing.small)
+        HStack(spacing: Spacing.small) {
+            CategoryTabBar(selection: viewModel.selectedCategory) { viewModel.select(category: $0) }
+            LineFilterMenu(lines: viewModel.availableLines, selection: viewModel.selectedLines) {
+                viewModel.toggle(line: $0)
+            }
+        }
+        .padding(.horizontal, Spacing.large)
+        .padding(.top, Spacing.small)
     }
 
-    /// Which empty it is: the whole catalogue, or only the selected tab. The view model derives the first; the
-    /// second's copy comes from the tab on screen.
+    /// Which empty it is: the whole catalogue, the checked lines, or only the selected tab. The view model derives
+    /// the first two; the third's copy comes from the tab on screen.
     @ViewBuilder
     private var emptyState: some View {
         if viewModel.isCatalogueEmpty {
             EmptyStateView(title: "No products", message: "The product list is empty. Pull down to try again.")
+        } else if !viewModel.selectedLines.isEmpty {
+            // Only reachable when an update drops the last product of a checked line: the menu offers no line
+            // without one.
+            EmptyStateView(
+                title: "No matching products",
+                message: "Nothing in the checked lines any more. Change the line filter.",
+                systemImage: ProductCategory.emptySymbol,
+            )
         } else {
             EmptyStateView(
                 title: viewModel.selectedCategory.emptyTitle,
@@ -110,6 +125,14 @@ struct ProductListView: View {
         )
         ProductListView(viewModel: viewModel)
             .task { viewModel.select(category: .cameras) }
+    }
+}
+
+#Preview("Line filter") {
+    NavigationStack {
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        ProductListView(viewModel: viewModel)
+            .task { viewModel.toggle(line: .unifiProtect) }
     }
 }
 

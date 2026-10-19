@@ -109,7 +109,12 @@ struct ProductListViewModelTests {
         // Through the view model, no feed and a failure is `.failed` too, so a state reached before the cached feed
         // lands would pass without exercising this mapping; the mapping is asserted on its own instead.
         let empty = Feed(version: "empty", products: [])
-        let state = ProductListViewModel.state(feed: empty, category: .all, isRefreshing: false, failure: offline)
+        let state = ProductListViewModel.state(
+            feed: empty,
+            filter: ProductFilter(category: .all),
+            isRefreshing: false,
+            failure: offline,
+        )
 
         #expect(state == .failed(offline))
     }
@@ -220,7 +225,7 @@ struct ProductListViewModelTests {
         let networkOnly = Feed(version: "network", products: [Product.previews[1]])
         let state = ProductListViewModel.state(
             feed: networkOnly,
-            category: .cameras,
+            filter: ProductFilter(category: .cameras),
             isRefreshing: false,
             failure: offline,
         )
@@ -237,6 +242,91 @@ struct ProductListViewModelTests {
         await viewModel.refresh()
 
         #expect(await settles(viewModel, at: .loaded([Product.previews[2]])))
+    }
+
+    @Test func startsWithNoLineChecked() {
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .unchanged))
+
+        #expect(viewModel.selectedLines.isEmpty)
+        #expect(viewModel.availableLines.isEmpty)
+    }
+
+    @Test func theMenuOffersTheLinesUnderTheTabOnceEachInFeedOrder() async {
+        let twoProtect = Feed(version: "v", products: Product.previews + [Product.previews[0]])
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(
+            cached: twoProtect,
+            refresh: .unchanged,
+        ))
+        viewModel.load()
+        await viewModel.refresh()
+        #expect(await settles(viewModel, at: .loaded(twoProtect.products)))
+
+        #expect(viewModel.availableLines == Product.previews.map(\.line))
+
+        viewModel.select(category: .cameras)
+        #expect(viewModel.availableLines == [Product.previews[0].line])
+    }
+
+    @Test func checkingALineFiltersTheListAtOnce() async {
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        viewModel.load()
+        await viewModel.refresh()
+        #expect(await settles(viewModel, at: .loaded(Product.previews)))
+
+        viewModel.toggle(line: .unifiProtect)
+
+        #expect(viewModel.selectedLines == [.unifiProtect])
+        #expect(viewModel.state == .loaded([Product.previews[0]]))
+
+        viewModel.toggle(line: .unifiConnect)
+        #expect(viewModel.state == .loaded([Product.previews[0], Product.previews[2]]))
+
+        viewModel.toggle(line: .unifiProtect)
+        #expect(viewModel.state == .loaded([Product.previews[2]]))
+
+        viewModel.toggle(line: .unifiConnect)
+        #expect(viewModel.selectedLines.isEmpty)
+        #expect(viewModel.state == .loaded(Product.previews))
+    }
+
+    @Test func switchingTabsClearsTheCheckedLines() async {
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        viewModel.load()
+        await viewModel.refresh()
+        #expect(await settles(viewModel, at: .loaded(Product.previews)))
+        viewModel.toggle(line: .unifiConnect)
+
+        viewModel.select(category: .cameras)
+
+        #expect(viewModel.selectedLines.isEmpty)
+        #expect(viewModel.state == .loaded([Product.previews[0]]))
+    }
+
+    @Test func reselectingTheTabKeepsTheCheckedLines() async {
+        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        viewModel.load()
+        await viewModel.refresh()
+        #expect(await settles(viewModel, at: .loaded(Product.previews)))
+        viewModel.toggle(line: .unifiConnect)
+
+        viewModel.select(category: .all)
+
+        #expect(viewModel.selectedLines == [.unifiConnect])
+    }
+
+    @Test func anUpdateDroppingACheckedLineLeavesTheListEmpty() async {
+        let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
+        let viewModel = ProductListViewModel(repository: repository)
+        viewModel.load()
+        await viewModel.refresh()
+        #expect(await settles(viewModel, at: .loaded(Product.previews)))
+        viewModel.toggle(line: .unifiConnect)
+
+        await repository.publish(Feed(version: "v2", products: [Product.previews[0]]))
+
+        #expect(await settles(viewModel, at: .empty))
+        #expect(viewModel.isCatalogueEmpty == false)
+        #expect(viewModel.selectedLines == [.unifiConnect])
     }
 
     private let offline = FeedError.network(.network(URLError(.notConnectedToInternet)))

@@ -1,11 +1,13 @@
 import Combine
 import Foundation
 
-/// State and intents of the product list: the feed filtered by the selected tab, kept on screen across refreshes.
+/// State and intents of the product list: the feed filtered by the selected tab and the checked lines, kept on
+/// screen across refreshes.
 ///
-/// Inputs enter as subjects: the feed the repository streams, the selected category, whether a refresh is in
-/// flight, and how the last refresh ended. The screen state is a `CombineLatest` over the four and the stale error
-/// over two of them, so no intent method computes a state by hand; see the Concurrency and Combine section of
+/// Inputs enter as subjects: the feed the repository streams, the selected category, the checked lines, whether a
+/// refresh is in flight, and how the last refresh ended. Category and lines combine into one `ProductFilter`, the
+/// screen state is a `CombineLatest` over the feed, the filter and the two refresh inputs, and the stale error over
+/// two of them, so no intent method computes a state by hand; see the Concurrency and Combine section of
 /// `docs/CODING_STANDARDS.md`. `init` only wires the pipeline; `load()` starts the subscription and the first refresh.
 @Observable
 final class ProductListViewModel {
@@ -13,6 +15,11 @@ final class ProductListViewModel {
     private(set) var state: LoadState<[Product]> = .loading
     /// The tab the list is filtered by.
     private(set) var selectedCategory: ProductCategory = .all
+    /// The lines checked in the filter menu; empty means every line under the tab.
+    private(set) var selectedLines: Set<Line.ID> = []
+    /// The lines the filter menu offers: those with a product under the selected tab, in the order the feed first
+    /// lists them.
+    private(set) var availableLines: [Line] = []
     /// The feed on screen has no products at all, so an `empty` state is the catalogue's, not the tab's.
     private(set) var isCatalogueEmpty = false
     /// Why the list on screen is stale: the refresh behind it failed. `nil` while the list has no rows, since the
@@ -24,6 +31,7 @@ final class ProductListViewModel {
     private let repository: any FeedRepository
     private let feedSubject = CurrentValueSubject<Feed?, Never>(nil)
     private let categorySubject = CurrentValueSubject<ProductCategory, Never>(.all)
+    private let linesSubject = CurrentValueSubject<Set<Line.ID>, Never>([])
     private let refreshingSubject = CurrentValueSubject<Bool, Never>(false)
     private let refreshFailureSubject = CurrentValueSubject<FeedError?, Never>(nil)
     // Plumbing, not state a view reads: kept out of observation so a task swap never invalidates a view.
@@ -35,20 +43,31 @@ final class ProductListViewModel {
     init(repository: any FeedRepository) {
         self.repository = repository
 
-        Publishers.CombineLatest4(
-            feedSubject.removeDuplicates { $0?.version == $1?.version },
-            categorySubject,
-            refreshingSubject,
-            refreshFailureSubject,
-        )
-        .map(Self.state)
-        .removeDuplicates()
-        .sink { [weak self] state in self?.state = state }
-        .store(in: &cancellables)
+        let feed = feedSubject.removeDuplicates { $0?.version == $1?.version }
+        let filter = Publishers.CombineLatest(categorySubject, linesSubject)
+            .map(ProductFilter.init)
+            .removeDuplicates()
+
+        Publishers.CombineLatest4(feed, filter, refreshingSubject, refreshFailureSubject)
+            .map(Self.state)
+            .removeDuplicates()
+            .sink { [weak self] state in self?.state = state }
+            .store(in: &cancellables)
 
         categorySubject
             .removeDuplicates()
             .sink { [weak self] category in self?.selectedCategory = category }
+            .store(in: &cancellables)
+
+        linesSubject
+            .removeDuplicates()
+            .sink { [weak self] lines in self?.selectedLines = lines }
+            .store(in: &cancellables)
+
+        Publishers.CombineLatest(feed, categorySubject)
+            .map(Self.lines)
+            .removeDuplicates()
+            .sink { [weak self] lines in self?.availableLines = lines }
             .store(in: &cancellables)
 
         feedSubject
@@ -99,9 +118,22 @@ final class ProductListViewModel {
         startRefresh()
     }
 
-    /// Filters the list by `category`. The pipeline answers synchronously, so the list changes with the tap.
+    /// Filters the list by `category`. The pipeline answers synchronously, so the list changes with the tap. The
+    /// checked lines are cleared: a line checked under one tab says nothing about another, and the new tab's menu
+    /// offers a different set.
     func select(category: ProductCategory) {
+        guard category != categorySubject.value else { return }
+        linesSubject.send([])
         categorySubject.send(category)
+    }
+
+    /// Checks `line` in the filter menu, or unchecks it when it is on. Synchronous like `select(category:)`.
+    func toggle(line: Line.ID) {
+        var lines = linesSubject.value
+        if lines.remove(line) == nil {
+            lines.insert(line)
+        }
+        linesSubject.send(lines)
     }
 
     // MARK: - Private helpers
@@ -135,14 +167,15 @@ final class ProductListViewModel {
     /// order the scheduler picks.
     static func state(
         feed: Feed?,
-        category: ProductCategory,
+        filter: ProductFilter,
         isRefreshing: Bool,
         failure: FeedError?,
     ) -> LoadState<[Product]> {
         let catalogue = feed?.products ?? []
-        let products = catalogue.filter(category.contains)
+        let products = catalogue.filter(filter.contains)
         guard products.isEmpty else { return .loaded(products) }
-        // Rows exist, just none under this tab: the user switches tabs, and a failed refresh has nothing to add.
+        // Rows exist, just none under this tab or these lines: the user widens the filter, and a failed refresh has
+        // nothing to add.
         guard catalogue.isEmpty else { return .empty }
         // No rows to keep on screen, cached or not: the failure is the state until a retry is under way, which
         // reads as loading again. An empty list over a failed refresh would claim the catalogue is empty.
@@ -150,5 +183,14 @@ final class ProductListViewModel {
             return isRefreshing ? .loading : .failed(failure)
         }
         return feed == nil ? .loading : .empty
+    }
+
+    /// The lines under `category`, each once, in the order the feed first lists a product of theirs.
+    static func lines(feed: Feed?, category: ProductCategory) -> [Line] {
+        var seen: Set<Line.ID> = []
+        return (feed?.products ?? [])
+            .filter(category.contains)
+            .map(\.line)
+            .filter { seen.insert($0.id).inserted }
     }
 }
