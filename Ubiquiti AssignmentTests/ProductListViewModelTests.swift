@@ -1,12 +1,13 @@
 import Foundation
 import Testing
+import UIKit
 @testable import Ubiquiti_Assignment
 
 @Suite(.timeLimit(.minutes(1)))
 @MainActor
 struct ProductListViewModelTests {
     @Test func loadsTheDownloadedFeedWhenNothingIsCached() async {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .updated(.preview)))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(refresh: .updated(.preview)))
 
         #expect(viewModel.state == .loading)
         viewModel.load()
@@ -18,7 +19,7 @@ struct ProductListViewModelTests {
     }
 
     @Test func loadRendersTheCachedFeedBeforeTheRefreshAnswers() async {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository.neverAnswering(cached: .preview))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository.neverAnswering(cached: .preview))
 
         viewModel.load()
 
@@ -30,7 +31,7 @@ struct ProductListViewModelTests {
     @Test func loadAloneReplacesTheCachedFeedWithTheRefreshedOne() async {
         let update = Feed(version: "v2", products: [Product.previews[0]])
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .updated(update))
-        let viewModel = ProductListViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         viewModel.load()
 
@@ -41,7 +42,7 @@ struct ProductListViewModelTests {
 
     @Test func keepsTheCachedFeedAsStaleWhenTheRefreshFails() async {
         let repository = InMemoryFeedRepository(cached: .preview, error: offline)
-        let viewModel = ProductListViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         viewModel.load()
         await viewModel.refresh()
@@ -52,7 +53,7 @@ struct ProductListViewModelTests {
     }
 
     @Test func failsWhenNothingIsCachedAndTheRefreshFails() async {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(error: offline))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(error: offline))
 
         viewModel.load()
         await viewModel.refresh()
@@ -62,7 +63,7 @@ struct ProductListViewModelTests {
     }
 
     @Test func anUnchangedRefreshLeavesTheCachedFeedCurrent() async {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
 
         viewModel.load()
         await viewModel.refresh()
@@ -73,7 +74,7 @@ struct ProductListViewModelTests {
 
     @Test func aFeedWithNoProductsIsEmpty() async {
         let empty = Feed(version: "empty", products: [])
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .updated(empty)))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(refresh: .updated(empty)))
 
         viewModel.load()
         await viewModel.refresh()
@@ -85,7 +86,7 @@ struct ProductListViewModelTests {
     @Test func anEmptyCatalogueIsEmptyOnEveryTab() async {
         // The screen must not suggest another tab when every tab is empty.
         let empty = Feed(version: "empty", products: [])
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .updated(empty)))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(refresh: .updated(empty)))
         viewModel.select(category: .cameras)
 
         viewModel.load()
@@ -97,7 +98,7 @@ struct ProductListViewModelTests {
 
     @Test func placeholderProductsAreShownLikeAnyOther() async {
         let feed = Feed(version: "placeholders", products: [Product.placeholder] + Product.previews)
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .updated(feed)))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(refresh: .updated(feed)))
 
         viewModel.load()
         await viewModel.refresh()
@@ -121,7 +122,7 @@ struct ProductListViewModelTests {
 
     @Test func anUpdateNobodyOnScreenAskedForReplacesTheList() async {
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
-        let viewModel = ProductListViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
@@ -133,7 +134,7 @@ struct ProductListViewModelTests {
     }
 
     @Test func aRetryFromTheErrorStateReadsAsLoadingUntilItFails() async {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(error: offline))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(error: offline))
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .failed(offline)))
@@ -148,7 +149,7 @@ struct ProductListViewModelTests {
 
     @Test func aPullWhileARefreshIsInFlightJoinsIt() async {
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
-        let viewModel = ProductListViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         viewModel.load()
         await viewModel.refresh()
@@ -159,7 +160,7 @@ struct ProductListViewModelTests {
 
     @Test func aPullAfterARefreshHasEndedAsksAgain() async {
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
-        let viewModel = ProductListViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         viewModel.load()
         await viewModel.refresh()
@@ -170,7 +171,7 @@ struct ProductListViewModelTests {
 
     @Test func loadingTwiceRefreshesOnce() async {
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
-        let viewModel = ProductListViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         viewModel.load()
         viewModel.load()
@@ -180,13 +181,13 @@ struct ProductListViewModelTests {
     }
 
     @Test func startsOnTheAllTab() {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .unchanged))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(refresh: .unchanged))
 
         #expect(viewModel.selectedCategory == .all)
     }
 
     @Test func selectingATabFiltersTheListAtOnce() async {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
@@ -206,7 +207,7 @@ struct ProductListViewModelTests {
 
     @Test func aTabWithNoProductsIsEmptyWhileTheCatalogueIsNot() async {
         let networkOnly = Feed(version: "network", products: [Product.previews[1]])
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(
             cached: networkOnly,
             refresh: .unchanged,
         ))
@@ -235,7 +236,7 @@ struct ProductListViewModelTests {
 
     @Test func aFeedArrivingLaterIsFilteredByTheSelectedTab() async {
         let repository = InMemoryFeedRepository(refresh: .updated(.preview))
-        let viewModel = ProductListViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
         viewModel.select(category: .iot)
 
         viewModel.load()
@@ -245,7 +246,7 @@ struct ProductListViewModelTests {
     }
 
     @Test func startsWithNoLineChecked() {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(refresh: .unchanged))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(refresh: .unchanged))
 
         #expect(viewModel.selectedLines.isEmpty)
         #expect(viewModel.availableLines.isEmpty)
@@ -253,7 +254,7 @@ struct ProductListViewModelTests {
 
     @Test func theMenuOffersTheLinesUnderTheTabOnceEachInFeedOrder() async {
         let twoProtect = Feed(version: "v", products: Product.previews + [Product.previews[0]])
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(
             cached: twoProtect,
             refresh: .unchanged,
         ))
@@ -268,7 +269,7 @@ struct ProductListViewModelTests {
     }
 
     @Test func checkingALineFiltersTheListAtOnce() async {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
@@ -290,7 +291,7 @@ struct ProductListViewModelTests {
     }
 
     @Test func switchingTabsClearsTheCheckedLines() async {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
@@ -303,7 +304,7 @@ struct ProductListViewModelTests {
     }
 
     @Test func reselectingTheTabKeepsTheCheckedLines() async {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
@@ -316,7 +317,7 @@ struct ProductListViewModelTests {
 
     @Test func anUpdateDroppingACheckedLineUnchecksIt() async {
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
-        let viewModel = ProductListViewModel(repository: repository)
+        let viewModel = makeViewModel(repository: repository)
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
@@ -331,5 +332,25 @@ struct ProductListViewModelTests {
         #expect(viewModel.availableLines == [Product.previews[0].line, Product.previews[1].line])
     }
 
+    @Test func aThumbnailViewModelLoadsTheThumbnailOfItsProduct() async {
+        let loader = InMemoryImageLoader(image: .solid(.blue, size: .thumbnail))
+        let viewModel = makeViewModel(
+            repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged),
+            imageLoader: loader,
+        )
+        let product = Product.previews[1]
+
+        await viewModel.thumbnailViewModel(for: product).load()
+
+        #expect(loader.requests == [InMemoryImageLoader.Request(productID: product.id, size: .thumbnail)])
+    }
+
     private let offline = FeedError.network(.network(URLError(.notConnectedToInternet)))
+
+    private func makeViewModel(
+        repository: any FeedRepository,
+        imageLoader: any ImageLoader = InMemoryImageLoader(),
+    ) -> ProductListViewModel {
+        ProductListViewModel(repository: repository, imageLoader: imageLoader)
+    }
 }

@@ -6,7 +6,7 @@ iOS take-home for a job application: a SwiftUI + Combine app listing Ubiquiti pr
 
 `make` is the single entry point. Run `make help` for targets. Always finish a change with `make build`; run `make test` when a test target exists. Never report a change as done with a failing build.
 
-Xcode project, not SwiftPM: adding a file means adding it to the `Ubiquiti Assignment` target. Files sit under `Ubiquiti Assignment/` and the project uses folder-synchronised groups, so a new file placed in the right folder is picked up without editing `project.pbxproj`. Edit `project.pbxproj` only for build settings.
+Xcode project, not SwiftPM: adding a file means adding it to the `Ubiquiti Assignment` target. Files sit under `Ubiquiti Assignment/` and the project uses folder-synchronised groups, so a new file placed in the right folder is picked up without editing `project.pbxproj`. Edit `project.pbxproj` only for build settings and Swift package dependencies.
 
 ## Layout
 

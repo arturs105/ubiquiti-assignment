@@ -10,7 +10,8 @@ import Foundation
 /// narrowed to those lines, the screen state is a `CombineLatest` over the feed, that filter and the two refresh
 /// inputs, and the stale error over two of them, so no intent method computes a state by hand; see the Concurrency
 /// and Combine section of `docs/CODING_STANDARDS.md`. `init` only wires the pipeline; `load()` starts the
-/// subscription and the first refresh.
+/// subscription and the first refresh. The rows' thumbnails are built here too, so the views never see the image
+/// loader.
 @Observable
 final class ProductListViewModel {
     /// What the screen shows: the products under the selected tab.
@@ -31,6 +32,7 @@ final class ProductListViewModel {
     private(set) var isRefreshing = false
 
     private let repository: any FeedRepository
+    private let imageLoader: any ImageLoader
     private let feedSubject = CurrentValueSubject<Feed?, Never>(nil)
     private let filterSubject = CurrentValueSubject<ProductFilter, Never>(ProductFilter(category: .all))
     private let refreshingSubject = CurrentValueSubject<Bool, Never>(false)
@@ -40,9 +42,12 @@ final class ProductListViewModel {
     @ObservationIgnored private var feedTask: Task<Void, Never>?
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
 
-    /// - Parameter repository: the feed seam the list reads and refreshes through.
-    init(repository: any FeedRepository) {
+    /// - Parameters:
+    ///   - repository: The feed seam the list reads and refreshes through.
+    ///   - imageLoader: The image seam the rows' thumbnails load through.
+    init(repository: any FeedRepository, imageLoader: any ImageLoader) {
         self.repository = repository
+        self.imageLoader = imageLoader
 
         let feed = feedSubject.removeDuplicates { $0?.version == $1?.version }
         let category = filterSubject.map(\.category).removeDuplicates()
@@ -138,6 +143,14 @@ final class ProductListViewModel {
             lines.insert(line)
         }
         filterSubject.send(ProductFilter(category: filterSubject.value.category, lines: lines))
+    }
+
+    // MARK: - Child view models
+
+    /// The thumbnail slot of one row. Built on every render of the row and kept by its view as `@State`, like the
+    /// screen view models the root builds; see `docs/DECISIONS.md`, 2026-10-19.
+    func thumbnailViewModel(for product: Product) -> ProductImageViewModel {
+        ProductImageViewModel(product: product, size: .thumbnail, loader: imageLoader)
     }
 
     // MARK: - Private helpers

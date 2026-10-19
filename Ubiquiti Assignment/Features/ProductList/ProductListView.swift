@@ -10,7 +10,7 @@ import SwiftUI
 struct ProductListView: View {
     @State private var viewModel: ProductListViewModel
 
-    /// - Parameter viewModel: built by whoever owns the navigation stack; the view keeps it for its lifetime.
+    /// - Parameter viewModel: Built by whoever owns the navigation stack; the view keeps it for its lifetime.
     init(viewModel: ProductListViewModel) {
         _viewModel = State(wrappedValue: viewModel)
     }
@@ -43,6 +43,7 @@ struct ProductListView: View {
         case let .loaded(products):
             ProductListContent(
                 products: products,
+                thumbnail: viewModel.thumbnailViewModel,
                 isStale: viewModel.staleError != nil,
                 isRefreshing: viewModel.isRefreshing,
                 refresh: viewModel.refresh,
@@ -85,6 +86,7 @@ struct ProductListView: View {
     NavigationStack {
         ProductListView(viewModel: ProductListViewModel(
             repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged),
+            imageLoader: InMemoryImageLoader(),
         ))
     }
 }
@@ -96,6 +98,7 @@ struct ProductListView: View {
                 cached: .preview,
                 error: .network(.network(URLError(.notConnectedToInternet))),
             ),
+            imageLoader: InMemoryImageLoader(),
         ))
     }
 }
@@ -104,6 +107,7 @@ struct ProductListView: View {
     NavigationStack {
         ProductListView(viewModel: ProductListViewModel(
             repository: InMemoryFeedRepository(refresh: .updated(Feed(version: "empty", products: []))),
+            imageLoader: InMemoryImageLoader(),
         ))
     }
 }
@@ -115,6 +119,7 @@ struct ProductListView: View {
                 version: "network",
                 products: [Product.previews[1]],
             ))),
+            imageLoader: InMemoryImageLoader(),
         )
         ProductListView(viewModel: viewModel)
             .task { viewModel.select(category: .cameras) }
@@ -123,7 +128,10 @@ struct ProductListView: View {
 
 #Preview("Line filter") {
     NavigationStack {
-        let viewModel = ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged))
+        let viewModel = ProductListViewModel(
+            repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged),
+            imageLoader: InMemoryImageLoader(),
+        )
         ProductListView(viewModel: viewModel)
             .task { viewModel.toggle(line: .unifiProtect) }
     }
@@ -133,12 +141,16 @@ struct ProductListView: View {
     NavigationStack {
         ProductListView(viewModel: ProductListViewModel(
             repository: InMemoryFeedRepository(error: .network(.httpStatus(503))),
+            imageLoader: InMemoryImageLoader(),
         ))
     }
 }
 
 #Preview("Loading") {
     NavigationStack {
-        ProductListView(viewModel: ProductListViewModel(repository: InMemoryFeedRepository.neverAnswering()))
+        ProductListView(viewModel: ProductListViewModel(
+            repository: InMemoryFeedRepository.neverAnswering(),
+            imageLoader: InMemoryImageLoader.pending,
+        ))
     }
 }
