@@ -22,7 +22,7 @@ extension Product {
             minimumAdoptVersion: "1.20.0",
             complianceModelName: "UVC-G3-DOME",
             isIndoorOnly: true,
-            wifiGeneration: "5",
+            wifiGeneration: "5e",
             isARSupported: false,
         ),
         Product(

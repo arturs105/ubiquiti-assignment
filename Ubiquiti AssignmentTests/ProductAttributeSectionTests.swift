@@ -39,7 +39,7 @@ struct ProductAttributeSectionTests {
 
         #expect(sections[1].attributes.map(\.value) == ["Adoptable", "1.20.0", "81.3°", "5 m"])
         #expect(sections[2].attributes.map(\.value) == ["4.5 W"])
-        #expect(sections[3].attributes.map(\.value) == ["UVC-G3-DOME", "Yes", "5"])
+        #expect(sections[3].attributes.map(\.value) == ["UVC-G3-DOME", "Yes", "5e"])
     }
 
     /// Pinned so the expected strings do not depend on the simulator's locale.
