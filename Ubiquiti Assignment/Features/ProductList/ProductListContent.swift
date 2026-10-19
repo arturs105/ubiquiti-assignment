@@ -52,8 +52,8 @@ struct ProductListContent: View {
         .listStyle(.insetGrouped)
         .animation(reduceMotion ? nil : .default, value: products)
         .contentMargins(.horizontal, Spacing.large, for: .scrollContent)
-        // The inset-grouped default leaves a section's worth of air under the tab bar; Figma has the 8pt gap.
-        .contentMargins(.top, Spacing.small, for: .scrollContent)
+        // The inset-grouped default leaves a section's worth of air under the tab bar; the gap is the bar's padding.
+        .contentMargins(.top, 0, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .background(.backgroundSecondary)
         .refreshable(action: refresh)

@@ -37,7 +37,7 @@ struct ProductListView: View {
             }
             .background(.backgroundSecondary)
             .refreshable(action: viewModel.refresh)
-            .safeAreaInset(edge: .top) { tabBar }
+            .safeAreaBar(edge: .top) { tabBar }
         case let .failed(error):
             ErrorView(error: error, retry: viewModel.retry)
         case let .loaded(products):
@@ -49,11 +49,14 @@ struct ProductListView: View {
                 refresh: viewModel.refresh,
                 retry: viewModel.retry,
             )
-            .safeAreaInset(edge: .top) { tabBar }
+            .safeAreaBar(edge: .top) { tabBar }
         }
     }
 
     /// Figma's "Tab Bar Container": the tabs stretching, the filter button fixed beside them, 8pt apart.
+    ///
+    /// Pinned with `safeAreaBar`, not `safeAreaInset`, so the system draws its soft scroll-edge blur under the bar
+    /// once rows scroll beneath it, the treatment a navigation bar gets; at rest the bar sits on the plain background.
     private var tabBar: some View {
         HStack(spacing: Spacing.small) {
             CategoryTabBar(selection: viewModel.selectedCategory) { viewModel.select(category: $0) }
@@ -63,6 +66,8 @@ struct ProductListView: View {
         }
         .padding(.horizontal, Spacing.large)
         .padding(.top, Spacing.small)
+        // Figma's 8pt gap to the first row is the bar's, not the list's content margin, so the system blur spans it.
+        .padding(.bottom, Spacing.small)
     }
 
     /// Which empty it is: the whole catalogue, or only the selected tab. The view model derives the first; the
