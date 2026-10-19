@@ -3,7 +3,12 @@ import SwiftUI
 /// The loaded list: product rows in one grouped block, the stale banner pinned above them when a refresh failed.
 ///
 /// Pull to refresh awaits the view model's refresh, so the system indicator ends when the server has answered.
+///
+/// A tab or line change replaces `products`; the rows are keyed by product id, so the list animates the rows that
+/// leave and arrive while the rest slide into place, or cuts straight when Reduce Motion is on.
 struct ProductListContent: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private let products: [Product]
     private let thumbnail: (Product) -> ProductImageViewModel
     private let isStale: Bool
@@ -45,7 +50,10 @@ struct ProductListContent: View {
             .listRowBackground(Color.backgroundPrimary)
         }
         .listStyle(.insetGrouped)
+        .animation(reduceMotion ? nil : .default, value: products)
         .contentMargins(.horizontal, Spacing.large, for: .scrollContent)
+        // The inset-grouped default leaves a section's worth of air under the tab bar; the gap is the bar's padding.
+        .contentMargins(.top, 0, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .background(.backgroundSecondary)
         .refreshable(action: refresh)

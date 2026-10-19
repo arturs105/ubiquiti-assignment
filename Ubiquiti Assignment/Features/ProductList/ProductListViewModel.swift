@@ -1,17 +1,30 @@
 import Combine
 import Foundation
 
-/// State and intents of the product list: the feed as a list of products, kept on screen across refreshes.
+/// State and intents of the product list: the feed filtered by the selected tab and the checked lines, kept on
+/// screen across refreshes.
 ///
-/// Inputs enter as subjects: the feed the repository streams, whether a refresh is in flight, and how the last
-/// refresh ended. The screen state is a `CombineLatest` over the three and the stale error over two of them, so
-/// no intent method computes a state by hand; see the Concurrency and Combine section of `docs/CODING_STANDARDS.md`.
-/// `init` only wires the pipeline; `load()` starts the subscription and the first refresh. The rows' thumbnails are
-/// built here too, so the views never see the image loader.
+/// Inputs enter as subjects: the feed the repository streams, the filter (the selected category and the checked
+/// lines, one `ProductFilter` so a tab change is one send), whether a refresh is in flight, and how the last refresh
+/// ended. The lines the menu offers derive from feed and category, the filter the list applies is the input filter
+/// narrowed to those lines, the screen state is a `CombineLatest` over the feed, that filter and the two refresh
+/// inputs, and the stale error over two of them, so no intent method computes a state by hand; see the Concurrency
+/// and Combine section of `docs/CODING_STANDARDS.md`. `init` only wires the pipeline; `load()` starts the
+/// subscription and the first refresh. The rows' thumbnails are built here too, so the views never see the image
+/// loader.
 @Observable
 final class ProductListViewModel {
-    /// What the screen shows.
+    /// What the screen shows: the products under the selected tab.
     private(set) var state: LoadState<[Product]> = .loading
+    /// The tab the list is filtered by.
+    private(set) var selectedCategory: ProductCategory = .all
+    /// The lines checked in the filter menu, among those it offers; empty means every line under the tab.
+    private(set) var selectedLines: Set<Line.ID> = []
+    /// The lines the filter menu offers: Figma's four, those of them with a product under the selected tab, in
+    /// Figma's order.
+    private(set) var availableLines: [Line] = []
+    /// The feed on screen has no products at all, so an `empty` state is the catalogue's, not the tab's.
+    private(set) var isCatalogueEmpty = false
     /// Why the list on screen is stale: the refresh behind it failed. `nil` while the list has no rows, since the
     /// failure is then the state itself.
     private(set) var staleError: FeedError?
@@ -21,6 +34,7 @@ final class ProductListViewModel {
     private let repository: any FeedRepository
     private let imageLoader: any ImageLoader
     private let feedSubject = CurrentValueSubject<Feed?, Never>(nil)
+    private let filterSubject = CurrentValueSubject<ProductFilter, Never>(ProductFilter(category: .all))
     private let refreshingSubject = CurrentValueSubject<Bool, Never>(false)
     private let refreshFailureSubject = CurrentValueSubject<FeedError?, Never>(nil)
     // Plumbing, not state a view reads: kept out of observation so a task swap never invalidates a view.
@@ -35,15 +49,41 @@ final class ProductListViewModel {
         self.repository = repository
         self.imageLoader = imageLoader
 
-        Publishers.CombineLatest3(
-            feedSubject.removeDuplicates { $0?.version == $1?.version },
-            refreshingSubject,
-            refreshFailureSubject,
-        )
-        .map(Self.state)
-        .removeDuplicates()
-        .sink { [weak self] state in self?.state = state }
-        .store(in: &cancellables)
+        let feed = feedSubject.removeDuplicates { $0?.version == $1?.version }
+        let category = filterSubject.map(\.category).removeDuplicates()
+        let availableLines = Publishers.CombineLatest(feed, category)
+            .map(Self.lines)
+            .removeDuplicates()
+        // A checked line an update dropped from the tab unchecks itself: the menu would have no entry for it.
+        let filter = Publishers.CombineLatest(filterSubject, availableLines)
+            .map { filter, lines in filter.keeping(lines.map(\.id)) }
+            .removeDuplicates()
+
+        Publishers.CombineLatest4(feed, filter, refreshingSubject, refreshFailureSubject)
+            .map(Self.state)
+            .removeDuplicates()
+            .sink { [weak self] state in self?.state = state }
+            .store(in: &cancellables)
+
+        category
+            .sink { [weak self] category in self?.selectedCategory = category }
+            .store(in: &cancellables)
+
+        filter
+            .map(\.lines)
+            .removeDuplicates()
+            .sink { [weak self] lines in self?.selectedLines = lines }
+            .store(in: &cancellables)
+
+        availableLines
+            .sink { [weak self] lines in self?.availableLines = lines }
+            .store(in: &cancellables)
+
+        feedSubject
+            .map { $0?.products.isEmpty ?? false }
+            .removeDuplicates()
+            .sink { [weak self] isEmpty in self?.isCatalogueEmpty = isEmpty }
+            .store(in: &cancellables)
 
         Publishers.CombineLatest(feedSubject, refreshFailureSubject)
             .map { feed, failure in (feed?.products.isEmpty ?? true) ? nil : failure }
@@ -87,6 +127,24 @@ final class ProductListViewModel {
         startRefresh()
     }
 
+    /// Filters the list by `category`. The pipeline answers synchronously, so the list changes with the tap. The
+    /// checked lines are cleared: a line checked under one tab says nothing about another, and the new tab's menu
+    /// offers a different set. One send, so the pipeline sees one filter change.
+    func select(category: ProductCategory) {
+        guard category != filterSubject.value.category else { return }
+        filterSubject.send(ProductFilter(category: category))
+    }
+
+    /// Checks `line` in the filter menu, or unchecks it when it is on. Synchronous like `select(category:)`. Starts
+    /// from the lines on screen, so a line the pipeline already unchecked does not come back.
+    func toggle(line: Line.ID) {
+        var lines = selectedLines
+        if lines.remove(line) == nil {
+            lines.insert(line)
+        }
+        filterSubject.send(ProductFilter(category: filterSubject.value.category, lines: lines))
+    }
+
     // MARK: - Child view models
 
     /// The thumbnail slot of one row. Built on every render of the row and kept by its view as `@State`, like the
@@ -124,14 +182,29 @@ final class ProductListViewModel {
 
     /// The state pipeline's `map`, internal so tests can pin a mapping whose inputs arrive through two tasks in an
     /// order the scheduler picks.
-    static func state(feed: Feed?, isRefreshing: Bool, failure: FeedError?) -> LoadState<[Product]> {
-        let products = feed?.products ?? []
+    static func state(
+        feed: Feed?,
+        filter: ProductFilter,
+        isRefreshing: Bool,
+        failure: FeedError?,
+    ) -> LoadState<[Product]> {
+        let catalogue = feed?.products ?? []
+        let products = catalogue.filter(filter.contains)
         guard products.isEmpty else { return .loaded(products) }
+        // Rows exist, just none under this tab or these lines: the user widens the filter, and a failed refresh has
+        // nothing to add.
+        guard catalogue.isEmpty else { return .empty }
         // No rows to keep on screen, cached or not: the failure is the state until a retry is under way, which
         // reads as loading again. An empty list over a failed refresh would claim the catalogue is empty.
         if let failure {
             return isRefreshing ? .loading : .failed(failure)
         }
         return feed == nil ? .loading : .empty
+    }
+
+    /// The menu's lines (`ProductFilter.menuLines`) that have a product under `category`, in the menu's order.
+    static func lines(feed: Feed?, category: ProductCategory) -> [Line] {
+        let present = (feed?.products ?? []).filter(category.contains).map(\.line)
+        return ProductFilter.menuLines.compactMap { id in present.first { $0.id == id } }
     }
 }

@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// The product list: every product in the feed, one row each, pushing the product's details on tap.
+/// The product list: the feed's products under the selected tab and the checked lines, one row each, pushing the
+/// product's details on tap.
 ///
-/// Switches over the view model's state so loading, empty and error each get their dedicated view. A list that is
-/// on screen while a refresh fails stays on screen with the stale banner above it; the view never decides what
-/// is stale, it only renders what the view model derived.
+/// Switches over the view model's state so loading, empty and error each get their dedicated view. The tab bar and
+/// the line filter button sit above the list and the empty state, the two states a feed can produce, and not above
+/// loading or error, where there is nothing to filter. A list that is on screen while a refresh fails stays on screen
+/// with the stale banner above it; the view never decides what is stale, it only renders what the view model derived.
 struct ProductListView: View {
     @State private var viewModel: ProductListViewModel
 
@@ -30,11 +32,12 @@ struct ProductListView: View {
         case .empty:
             // Scrollable so a pull can ask the server again; the state has no rows and no other way out.
             ScrollView {
-                EmptyStateView(title: "No products", message: "The product list is empty. Pull down to try again.")
+                emptyState
                     .containerRelativeFrame([.horizontal, .vertical])
             }
             .background(.backgroundSecondary)
             .refreshable(action: viewModel.refresh)
+            .safeAreaBar(edge: .top) { tabBar }
         case let .failed(error):
             ErrorView(error: error, retry: viewModel.retry)
         case let .loaded(products):
@@ -45,6 +48,40 @@ struct ProductListView: View {
                 isRefreshing: viewModel.isRefreshing,
                 refresh: viewModel.refresh,
                 retry: viewModel.retry,
+            )
+            .safeAreaBar(edge: .top) { tabBar }
+        }
+    }
+
+    /// Figma's "Tab Bar Container": the tabs stretching, the filter button fixed beside them, 8pt apart.
+    ///
+    /// Pinned with `safeAreaBar`, not `safeAreaInset`, so the system draws its soft scroll-edge blur under the bar
+    /// once rows scroll beneath it, the treatment a navigation bar gets; at rest the bar sits on the plain background.
+    private var tabBar: some View {
+        HStack(spacing: Spacing.small) {
+            CategoryTabBar(selection: viewModel.selectedCategory) { viewModel.select(category: $0) }
+            LineFilterMenu(lines: viewModel.availableLines, selection: viewModel.selectedLines) {
+                viewModel.toggle(line: $0)
+            }
+        }
+        .padding(.horizontal, Spacing.large)
+        .padding(.top, Spacing.small)
+        // Figma's 8pt gap to the first row is the bar's, not the list's content margin, so the system blur spans it.
+        .padding(.bottom, Spacing.small)
+    }
+
+    /// Which empty it is: the whole catalogue, or only the selected tab. The view model derives the first; the
+    /// second's copy comes from the tab on screen. Checked lines never empty a tab: the menu offers only lines
+    /// with a product, and a line an update drops unchecks itself.
+    @ViewBuilder
+    private var emptyState: some View {
+        if viewModel.isCatalogueEmpty {
+            EmptyStateView(title: "No products", message: "The product list is empty. Pull down to try again.")
+        } else {
+            EmptyStateView(
+                title: viewModel.selectedCategory.emptyTitle,
+                message: ProductCategory.emptyMessage,
+                systemImage: ProductCategory.emptySymbol,
             )
         }
     }
@@ -77,6 +114,31 @@ struct ProductListView: View {
             repository: InMemoryFeedRepository(refresh: .updated(Feed(version: "empty", products: []))),
             imageLoader: InMemoryImageLoader(),
         ))
+    }
+}
+
+#Preview("Empty tab") {
+    NavigationStack {
+        let viewModel = ProductListViewModel(
+            repository: InMemoryFeedRepository(refresh: .updated(Feed(
+                version: "network",
+                products: [Product.previews[1]],
+            ))),
+            imageLoader: InMemoryImageLoader(),
+        )
+        ProductListView(viewModel: viewModel)
+            .task { viewModel.select(category: .cameras) }
+    }
+}
+
+#Preview("Line filter") {
+    NavigationStack {
+        let viewModel = ProductListViewModel(
+            repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged),
+            imageLoader: InMemoryImageLoader(),
+        )
+        ProductListView(viewModel: viewModel)
+            .task { viewModel.toggle(line: .unifiProtect) }
     }
 }
 
