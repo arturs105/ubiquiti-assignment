@@ -41,7 +41,8 @@ make lint     # dry run, exits non-zero on any diff
 
 - Dark mode isn't supported since there are no desings for it. [ColorTokensKit](https://github.com/metasidd/ColorTokensKit-Swift) was considered for calculating dark mode colors, but that's probably an overkill for a home assignment.
 - On a real project i'd probably use [swift-dependencies](https://github.com/pointfreeco/swift-dependencies) library to simplify dependency injection, but for a such a small project direct dependencies through initialisers work just fine.
-- [Kingfisher](https://github.com/onevcat/Kingfisher/) is used for image caching in memory and on disk.
+
+- The assignment names `line` as the filter field but never says which lines make a tab, and the feed has no category field of its own: beyond `line` and `deviceType`, its keys are identifiers, images, compliance data and setup flags. So the tabs are rules over those two fields. **Cameras** is every product whose `deviceType` is `camera`; a first version took the whole UniFi Protect line, which put speakers, sensors, NVRs and a door lock under a tab labelled Cameras. **IoT** is the Access, Connect, LED and mFi lines in full, plus Protect's sensors, lights, locks, chimes and alarms; UniFi Talk is left out because its products are desk phones. Both are judgment calls, recorded with the alternatives in `docs/DECISIONS.md` (2026-10-15 and 2026-10-19), and each is a short list in `ProductCategory` so a different reading is a one-line change.
 
 _More to be distilled from `docs/DECISIONS.md` before submission._
 

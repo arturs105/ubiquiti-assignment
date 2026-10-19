@@ -16,7 +16,7 @@ struct FeedDecodingTests {
         #expect(camera.name == "Camera G3 Dome")
         #expect(camera.abbreviation == "G3 Dome")
         #expect(camera.sku == "UVC-G3-Dome")
-        #expect(camera.deviceType == "camera")
+        #expect(camera.deviceType == .camera)
         #expect(camera.shortnames == ["UVC G3 Dome", "UVC-G3-Dome"])
         #expect(camera.defaultImageID == "d8594ad6c9cf32910b210da58ace5d25")
         #expect(camera.line == Line(id: .unifiProtect, name: "UniFi Protect"))

@@ -41,7 +41,7 @@ enum ProductAttributeGroup: CaseIterable {
             ProductAttribute("Name", value: product.name),
             ProductAttribute("Short name", value: product.abbreviation),
             ProductAttribute("SKU", value: product.sku),
-            ProductAttribute("Device type", value: product.deviceType),
+            ProductAttribute("Device type", value: product.deviceType.rawValue),
         ]
         if !product.shortnames.isEmpty {
             attributes.append(ProductAttribute(

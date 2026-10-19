@@ -11,8 +11,8 @@ nonisolated struct Product: Codable, Hashable, Identifiable, Sendable {
     /// Short display name used in compact rows ("G3 Dome").
     let abbreviation: String
     let sku: String
-    /// Functional kind as the feed reports it (camera, switch, sensor…). A string until a screen needs it typed.
-    let deviceType: String
+    /// Functional kind as the feed reports it (camera, switch, sensor…).
+    let deviceType: DeviceType
     let shortnames: [String]
     /// Identifier of the default product image on the Ubiquiti CDN; the URL is built by the image loader.
     let defaultImageID: String
@@ -43,7 +43,7 @@ nonisolated struct Product: Codable, Hashable, Identifiable, Sendable {
         name: String,
         abbreviation: String,
         sku: String,
-        deviceType: String,
+        deviceType: DeviceType,
         shortnames: [String] = [],
         defaultImageID: String,
         line: Line,
@@ -136,7 +136,7 @@ nonisolated struct Product: Codable, Hashable, Identifiable, Sendable {
         name = try product.decode(String.self, forKey: .name)
         abbreviation = try product.decode(String.self, forKey: .abbrev)
         sku = try container.decode(String.self, forKey: .sku)
-        deviceType = try container.decode(String.self, forKey: .deviceType)
+        deviceType = try container.decode(DeviceType.self, forKey: .deviceType)
         shortnames = try container.decode([String].self, forKey: .shortnames)
         defaultImageID = try images.decode(String.self, forKey: .default)
         line = try container.decode(Line.self, forKey: .line)
@@ -206,5 +206,24 @@ nonisolated struct Product: Codable, Hashable, Identifiable, Sendable {
             try compliance.encodeIfPresent(wifiGeneration, forKey: .wifi)
         }
         try container.encodeIfPresent(isARSupported, forKey: .isARSupported)
+    }
+}
+
+extension Product {
+    /// Feed identifier of a product's functional kind. Open on purpose, like `Line.ID`: the feed can add kinds, so an
+    /// unseen value decodes like any other. Constants exist for the kinds the category rules compare against.
+    nonisolated struct DeviceType: RawRepresentable, Codable, Hashable, Sendable {
+        let rawValue: String
+
+        init(rawValue: String) {
+            self.rawValue = rawValue
+        }
+
+        static let camera = DeviceType(rawValue: "camera")
+        static let sensor = DeviceType(rawValue: "sensor")
+        static let light = DeviceType(rawValue: "light")
+        static let doorlock = DeviceType(rawValue: "doorlock")
+        static let chime = DeviceType(rawValue: "chime")
+        static let alarm = DeviceType(rawValue: "alarm")
     }
 }

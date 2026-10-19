@@ -23,4 +23,7 @@ enum Metrics {
 
     /// Horizontal inset of a tab label inside the tab bar.
     static let tabLabelInset: CGFloat = 18
+
+    /// Height of one tab, and of its selection pill; the bar is this plus the 4pt inset on each side.
+    static let tabHeight: CGFloat = 36
 }

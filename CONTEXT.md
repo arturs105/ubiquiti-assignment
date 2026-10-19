@@ -13,11 +13,11 @@ The whole UIDB document: a version fingerprint plus the list of products.
 _Avoid_: Catalogue, database, UIDB (as a type name)
 
 **Line**:
-The product family a product belongs to, such as UniFi Protect or airMAX. Has an id and a display name. Categories are defined in terms of lines.
+The product family a product belongs to, such as UniFi Protect or airMAX. Has an id and a display name. The IoT category and the line filter menu are defined in terms of lines.
 _Avoid_: Family, series, category
 
 **Category**:
-One of the three filter tabs: All, Cameras, IoT. A category is a rule over lines, not a field in the feed.
+One of the three filter tabs: All, Cameras, IoT. A category is a rule over a product, not a field in the feed: Cameras over the device type, IoT over the line.
 _Avoid_: Tab, filter, line
 
 **Device type**:
