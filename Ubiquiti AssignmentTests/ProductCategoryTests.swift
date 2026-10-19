@@ -36,7 +36,7 @@ struct ProductCategoryTests {
     @Test(arguments: [
         Line.ID(rawValue: "unifi-talk"),
         .unknown,
-        Line.ID(rawValue: "unifi-network"),
+        Line.ID.unifiNetwork,
         Line.ID(rawValue: "airmax")
     ])
     func iotLeavesOtherLinesToAllEvenForASensor(line: Line.ID) {

@@ -20,8 +20,8 @@ final class ProductListViewModel {
     private(set) var selectedCategory: ProductCategory = .all
     /// The lines checked in the filter menu, among those it offers; empty means every line under the tab.
     private(set) var selectedLines: Set<Line.ID> = []
-    /// The lines the filter menu offers: those with a product under the selected tab, in the order the feed first
-    /// lists them.
+    /// The lines the filter menu offers: Figma's four, those of them with a product under the selected tab, in
+    /// Figma's order.
     private(set) var availableLines: [Line] = []
     /// The feed on screen has no products at all, so an `empty` state is the catalogue's, not the tab's.
     private(set) var isCatalogueEmpty = false
@@ -202,12 +202,9 @@ final class ProductListViewModel {
         return feed == nil ? .loading : .empty
     }
 
-    /// The lines under `category`, each once, in the order the feed first lists a product of theirs.
+    /// The menu's lines (`ProductFilter.menuLines`) that have a product under `category`, in the menu's order.
     static func lines(feed: Feed?, category: ProductCategory) -> [Line] {
-        var seen: Set<Line.ID> = []
-        return (feed?.products ?? [])
-            .filter(category.contains)
-            .map(\.line)
-            .filter { seen.insert($0.id).inserted }
+        let present = (feed?.products ?? []).filter(category.contains).map(\.line)
+        return ProductFilter.menuLines.compactMap { id in present.first { $0.id == id } }
     }
 }

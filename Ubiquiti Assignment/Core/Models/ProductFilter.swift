@@ -26,4 +26,8 @@ nonisolated struct ProductFilter: Hashable, Sendable {
     func keeping(_ offered: some Sequence<Line.ID>) -> ProductFilter {
         ProductFilter(category: category, lines: lines.intersection(offered))
     }
+
+    /// The lines the filter menu can offer, in the order Figma lists them. Every other line in the feed is reached
+    /// through All with nothing checked. See `docs/DECISIONS.md`, 2026-10-19.
+    static let menuLines: [Line.ID] = [.unifiNetwork, .unifiLTE, .unifiProtect, .unifiAccess]
 }

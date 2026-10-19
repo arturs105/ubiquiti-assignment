@@ -252,17 +252,15 @@ struct ProductListViewModelTests {
         #expect(viewModel.availableLines.isEmpty)
     }
 
-    @Test func theMenuOffersTheLinesUnderTheTabOnceEachInFeedOrder() async {
-        let twoProtect = Feed(version: "v", products: Product.previews + [Product.previews[0]])
-        let viewModel = makeViewModel(repository: InMemoryFeedRepository(
-            cached: twoProtect,
-            refresh: .unchanged,
-        ))
+    @Test func theMenuOffersItsLinesUnderTheTabOnceEachInMenuOrder() async {
+        // Protect twice and listed after UniFi, plus a Connect display the menu never offers.
+        let feed = Feed(version: "v", products: [Product.previews[1]] + Product.previews)
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(cached: feed, refresh: .unchanged))
         viewModel.load()
         await viewModel.refresh()
-        #expect(await settles(viewModel, at: .loaded(twoProtect.products)))
+        #expect(await settles(viewModel, at: .loaded(feed.products)))
 
-        #expect(viewModel.availableLines == Product.previews.map(\.line))
+        #expect(viewModel.availableLines == [Product.previews[1].line, Product.previews[0].line])
 
         viewModel.select(category: .cameras)
         #expect(viewModel.availableLines == [Product.previews[0].line])
@@ -279,13 +277,13 @@ struct ProductListViewModelTests {
         #expect(viewModel.selectedLines == [.unifiProtect])
         #expect(viewModel.state == .loaded([Product.previews[0]]))
 
-        viewModel.toggle(line: .unifiConnect)
-        #expect(viewModel.state == .loaded([Product.previews[0], Product.previews[2]]))
+        viewModel.toggle(line: .unifiNetwork)
+        #expect(viewModel.state == .loaded([Product.previews[0], Product.previews[1]]))
 
         viewModel.toggle(line: .unifiProtect)
-        #expect(viewModel.state == .loaded([Product.previews[2]]))
+        #expect(viewModel.state == .loaded([Product.previews[1]]))
 
-        viewModel.toggle(line: .unifiConnect)
+        viewModel.toggle(line: .unifiNetwork)
         #expect(viewModel.selectedLines.isEmpty)
         #expect(viewModel.state == .loaded(Product.previews))
     }
@@ -295,7 +293,7 @@ struct ProductListViewModelTests {
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
-        viewModel.toggle(line: .unifiConnect)
+        viewModel.toggle(line: .unifiNetwork)
 
         viewModel.select(category: .cameras)
 
@@ -308,11 +306,11 @@ struct ProductListViewModelTests {
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
-        viewModel.toggle(line: .unifiConnect)
+        viewModel.toggle(line: .unifiNetwork)
 
         viewModel.select(category: .all)
 
-        #expect(viewModel.selectedLines == [.unifiConnect])
+        #expect(viewModel.selectedLines == [.unifiNetwork])
     }
 
     @Test func anUpdateDroppingACheckedLineUnchecksIt() async {
@@ -321,15 +319,15 @@ struct ProductListViewModelTests {
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
-        viewModel.toggle(line: .unifiConnect)
+        viewModel.toggle(line: .unifiNetwork)
         viewModel.toggle(line: .unifiProtect)
 
-        await repository.publish(Feed(version: "v2", products: [Product.previews[0], Product.previews[1]]))
+        await repository.publish(Feed(version: "v2", products: [Product.previews[0], Product.previews[2]]))
 
         // The menu has no entry for the dropped line, so nothing else could uncheck it; the other check stays.
         #expect(await settles(viewModel, at: .loaded([Product.previews[0]])))
         #expect(viewModel.selectedLines == [.unifiProtect])
-        #expect(viewModel.availableLines == [Product.previews[0].line, Product.previews[1].line])
+        #expect(viewModel.availableLines == [Product.previews[0].line])
     }
 
     @Test func aThumbnailViewModelLoadsTheThumbnailOfItsProduct() async {

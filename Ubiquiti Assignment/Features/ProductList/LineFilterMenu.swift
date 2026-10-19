@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// The filter button beside the tab bar: a 44pt glass circle with the slider glyph, as Figma's trailing "Tab Bar"
-/// frame, opening a menu of the lines under the selected tab with a check box against each line that is on.
+/// frame, opening a menu of Figma's four lines, those with a product under the selected tab, with a check box
+/// against each line that is on.
 ///
 /// A popover of check-box toggles, not a system `Menu`: a menu item's glyph is the system's own check, not Figma's
 /// square, and it cannot animate; the popover is the same glass panel and draws `square` / `checkmark.square` with
@@ -51,8 +52,8 @@ struct LineFilterMenu: View {
 
     // MARK: - Private helpers
 
-    /// The lines as check-box rows. Under All the catalogue has twenty-odd lines, so the rows scroll inside the
-    /// popover once they outgrow the screen.
+    /// The lines as check-box rows. Four at most today, but the rows scroll inside the popover should the menu
+    /// ever outgrow the screen at an accessibility text size.
     private var menu: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -99,7 +100,7 @@ extension LineFilterMenu {
 
 #Preview("Off") {
     @Previewable @State var selection: Set<Line.ID> = []
-    LineFilterMenu(lines: Product.previews.map(\.line), selection: selection) { id in
+    LineFilterMenu(lines: Product.previews.prefix(2).map(\.line), selection: selection) { id in
         selection.formSymmetricDifference([id])
     }
     .padding(Spacing.large)
@@ -107,7 +108,7 @@ extension LineFilterMenu {
 }
 
 #Preview("On") {
-    LineFilterMenu(lines: Product.previews.map(\.line), selection: [.unifiProtect]) { _ in }
+    LineFilterMenu(lines: Product.previews.prefix(2).map(\.line), selection: [.unifiProtect]) { _ in }
         .padding(Spacing.large)
         .background(.backgroundSecondary)
 }

@@ -1,7 +1,8 @@
 import Foundation
 
 extension Product {
-    /// A camera, a switch and a Connect display: enough variety for a list preview and a filter test. Ids are
+    /// A camera, a switch and a Connect display: enough variety for a list preview and a filter test, with two
+    /// lines the filter menu offers and one it does not. Ids are
     /// random per process: nothing compares them across launches, and a literal would only invite a typo. Image ids
     /// are the live feed's, as in the test fixture, so a preview that loads thumbnails finds real images.
     nonisolated static let previews: [Product] = [
@@ -21,7 +22,7 @@ extension Product {
             sku: "USW-Flex-Mini",
             deviceType: DeviceType(rawValue: "switch"),
             defaultImageID: "e3fbf220c145f4301929576039d52d19",
-            line: Line(id: Line.ID(rawValue: "unifi-network"), name: "UniFi"),
+            line: Line(id: .unifiNetwork, name: "UniFi"),
         ),
         Product(
             id: UUID(),
