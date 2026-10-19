@@ -35,6 +35,23 @@ struct ProductDetailViewModelTests {
         viewModel.load()
 
         #expect(await settles(viewModel, at: .empty))
+        #expect(await repository.refreshCount == 1)
+    }
+
+    @Test func readsAsLoadingWhileTheServerIsAskedForAProductTheCacheLacks() async {
+        let others = Feed(version: "v1", products: Array(Product.previews.dropFirst()))
+        let repository = InMemoryFeedRepository.neverAnswering(cached: others)
+        let viewModel = makeViewModel(repository: repository)
+
+        viewModel.load()
+        // The cached feed reaches the pipeline before the refresh starts, so once the server is asked the screen
+        // has seen a feed without the product and must still read as loading.
+        while await repository.refreshCount == 0 {
+            try? await Task.sleep(for: Settling.interval)
+        }
+
+        #expect(viewModel.state == .loading)
+        #expect(await repository.refreshCount == 1)
     }
 
     @Test func failsWhenNothingIsCachedAndTheRefreshFails() async {

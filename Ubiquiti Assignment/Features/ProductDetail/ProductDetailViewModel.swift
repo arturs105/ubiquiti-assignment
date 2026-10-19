@@ -62,11 +62,13 @@ final class ProductDetailViewModel {
             var isFirst = true
             for await feed in await repository.feed() {
                 guard let self else { return }
-                feedSubject.send(feed)
+                // The refresh flag goes up before the feed lacking the product goes in, so the pipeline never
+                // emits empty for a feed the server is about to be asked about.
                 if isFirst, !(feed?.products.contains { $0.id == productID } ?? false) {
                     startRefresh()
                 }
                 isFirst = false
+                feedSubject.send(feed)
             }
         }
     }
@@ -105,8 +107,8 @@ final class ProductDetailViewModel {
         }
     }
 
-    /// The state pipeline's `map`: the product when the feed holds it; otherwise the failure, loading while a
-    /// retry runs, or empty once a server has answered without it.
+    /// The state pipeline's `map`: the product when the feed holds it; otherwise loading while the server is being
+    /// asked, the failure when it could not be reached, or empty once it has answered without the product.
     private static func state(
         productID: Product.ID,
         feed: Feed?,
@@ -116,8 +118,11 @@ final class ProductDetailViewModel {
         if let product = feed?.products.first(where: { $0.id == productID }) {
             return .loaded(product)
         }
+        if isRefreshing {
+            return .loading
+        }
         if let failure {
-            return isRefreshing ? .loading : .failed(failure)
+            return .failed(failure)
         }
         return feed == nil ? .loading : .empty
     }
