@@ -9,10 +9,10 @@ struct ProductCategoryTests {
         #expect(products.allSatisfy(ProductCategory.all.contains))
     }
 
-    @Test func camerasIsTheProtectLine() {
-        #expect(ProductCategory.cameras.contains(product(line: .unifiProtect)))
-        #expect(!ProductCategory.cameras.contains(product(line: .unifiConnect)))
-        #expect(!ProductCategory.cameras.contains(product(line: Line.ID(rawValue: "unifi-network"))))
+    @Test func camerasIsTheCameraDeviceType() {
+        #expect(ProductCategory.cameras.contains(product(line: .unifiProtect, deviceType: .camera)))
+        #expect(!ProductCategory.cameras.contains(product(line: .unifiProtect, deviceType: sensor)))
+        #expect(!ProductCategory.cameras.contains(product(line: .unifiConnect, deviceType: .camera)))
     }
 
     @Test(arguments: [Line.ID.unifiConnect, .unifiAccess, .unifiLED, .unifiTalk, .mfi])
@@ -25,18 +25,20 @@ struct ProductCategoryTests {
         #expect(!ProductCategory.iot.contains(product(line: line)))
     }
 
-    @Test func aCameraRecordedUnderAnotherLineIsNotACamera() {
-        // The rule is the line, not the device type; see `docs/DECISIONS.md`, 2026-10-15.
-        let networkCamera = product(line: Line.ID(rawValue: "unifi-network"), deviceType: "camera")
+    @Test func aProtectAccessoryIsNotACamera() {
+        // The rule is the device type, not the line; see `docs/DECISIONS.md`, 2026-10-19.
+        let protectSensor = product(line: .unifiProtect, deviceType: sensor)
 
-        #expect(!ProductCategory.cameras.contains(networkCamera))
+        #expect(!ProductCategory.cameras.contains(protectSensor))
     }
 
     @Test func tabsAreAllCamerasIoTInOrder() {
         #expect(ProductCategory.allCases == [.all, .cameras, .iot])
     }
 
-    private func product(line: Line.ID, deviceType: String = "unknown") -> Product {
+    private let sensor = Product.DeviceType(rawValue: "sensor")
+
+    private func product(line: Line.ID, deviceType: Product.DeviceType = .init(rawValue: "unknown")) -> Product {
         Product(
             id: UUID(),
             name: "Product",

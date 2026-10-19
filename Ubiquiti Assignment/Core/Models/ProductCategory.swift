@@ -1,11 +1,11 @@
 import Foundation
 
-/// The three filter tabs over the catalogue. A category is a rule over a product's line, never its device type;
-/// the mapping is recorded in `docs/DECISIONS.md`, 2026-10-15.
+/// The three filter tabs over the catalogue. Cameras is a rule over the device type, IoT over the line; the mapping
+/// is recorded in `docs/DECISIONS.md`, 2026-10-15 and 2026-10-19.
 nonisolated enum ProductCategory: CaseIterable, Hashable, Identifiable, Sendable {
     /// Every product in the feed.
     case all
-    /// The UniFi Protect line: cameras, and the NVRs, sensors and accessories sold alongside them.
+    /// Every product the feed reports as a camera, whatever its line.
     case cameras
     /// The lines whose products are connected devices rather than network or video gear.
     case iot
@@ -16,7 +16,7 @@ nonisolated enum ProductCategory: CaseIterable, Hashable, Identifiable, Sendable
     func contains(_ product: Product) -> Bool {
         switch self {
         case .all: true
-        case .cameras: product.line.id == .unifiProtect
+        case .cameras: product.deviceType == .camera
         case .iot: Constants.iotLines.contains(product.line.id)
         }
     }
