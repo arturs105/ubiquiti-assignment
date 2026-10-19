@@ -11,13 +11,15 @@
     "IoT": {},
     "No IoT devices": {},
     "No cameras": {},
+    "No lines checked": {},
     "No products": {},
     "Nothing in this category yet. Try another tab.": {},
     "Product details": {},
     "Retry": {},
     "Showing saved products. Couldn’t refresh.": {},
     "Something went wrong": {},
-    "The product list is empty.": {}
+    "The product list is empty.": {},
+    "^[%lld line](inflect: true) checked": {}
   },
   "version": "1.0"
 }
