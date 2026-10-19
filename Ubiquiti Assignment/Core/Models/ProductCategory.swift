@@ -24,7 +24,7 @@ nonisolated enum ProductCategory: CaseIterable, Hashable, Identifiable, Sendable
 
 extension ProductCategory {
     private nonisolated enum Constants {
-        /// The lines the IoT tab gathers. A line not listed here, and not Protect, appears only under All.
+        /// The lines the IoT tab gathers. A product outside them that is not a camera appears only under All.
         static let iotLines: Set<Line.ID> = [.unifiConnect, .unifiAccess, .unifiLED, .unifiTalk, .mfi]
     }
 }
