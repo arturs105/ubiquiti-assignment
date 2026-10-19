@@ -1,16 +1,9 @@
 import SwiftUI
 
-/// The navigation stack every screen sits in, and the one place screens are built from `Dependencies`.
-///
-/// Owns the path so a push is a value appended to it, and registers the single destination for `Route`. Screens
-/// receive their view model by initialiser and know nothing about the stack; see the SwiftUI section of
-/// `docs/CODING_STANDARDS.md`.
 struct RootView: View {
-    /// What `body` and `destination(for:)` build the view models from.
     private let dependencies: Dependencies
     @State private var path: [Route] = []
 
-    /// - Parameter dependencies: the Core services the screens' view models are built from.
     init(dependencies: Dependencies) {
         self.dependencies = dependencies
     }

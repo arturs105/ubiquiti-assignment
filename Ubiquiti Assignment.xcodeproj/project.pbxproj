@@ -6,6 +6,10 @@
 	objectVersion = 90;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		000000000000000300000003 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000300000002 /* Kingfisher */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		000000000000000000000230 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -15,10 +19,6 @@
 			remoteInfo = "Ubiquiti Assignment";
 		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXBuildFile section */
-		000000000000000300000003 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 000000000000000300000002 /* Kingfisher */; };
-/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* Ubiquiti Assignment.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Ubiquiti Assignment.app"; sourceTree = BUILT_PRODUCTS_DIR; };
