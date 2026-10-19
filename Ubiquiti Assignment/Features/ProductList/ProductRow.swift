@@ -7,21 +7,21 @@ import SwiftUI
 /// then line; the slot is decorative.
 struct ProductRow: View {
     private let product: Product
-    private let imageLoader: any ImageLoader
+    private let thumbnail: ProductImageViewModel
 
     /// - Parameters:
     ///   - product: The product to show.
-    ///   - imageLoader: The image seam the thumbnail loads through.
-    init(product: Product, imageLoader: any ImageLoader) {
+    ///   - thumbnail: The thumbnail slot, built by the list view model.
+    init(product: Product, thumbnail: ProductImageViewModel) {
         self.product = product
-        self.imageLoader = imageLoader
+        self.thumbnail = thumbnail
     }
 
     // MARK: - View
 
     var body: some View {
         HStack(spacing: Spacing.medium) {
-            ProductImageView(viewModel: ProductImageViewModel(product: product, size: .thumbnail, loader: imageLoader))
+            ProductImageView(viewModel: thumbnail)
                 .frame(width: Metrics.thumbnail, height: Metrics.thumbnail)
             VStack(alignment: .leading) {
                 Text(product.name)
@@ -39,21 +39,30 @@ struct ProductRow: View {
 
 #Preview("Loaded") {
     List(Product.previews) { product in
-        ProductRow(product: product, imageLoader: InMemoryImageLoader(image: .solid(.systemBlue, size: .thumbnail)))
+        ProductRow(product: product, thumbnail: ProductImageViewModel(
+            product: product,
+            size: .thumbnail,
+            loader: InMemoryImageLoader(image: .solid(.systemBlue, size: .thumbnail)),
+        ))
     }
 }
 
 #Preview("Loading") {
     List(Product.previews) { product in
-        ProductRow(product: product, imageLoader: InMemoryImageLoader.pending)
+        ProductRow(product: product, thumbnail: ProductImageViewModel(
+            product: product,
+            size: .thumbnail,
+            loader: InMemoryImageLoader.pending,
+        ))
     }
 }
 
 #Preview("Failed") {
     List(Product.previews) { product in
-        ProductRow(
+        ProductRow(product: product, thumbnail: ProductImageViewModel(
             product: product,
-            imageLoader: InMemoryImageLoader(error: .network(.httpStatus(HTTPStatus.forbidden))),
-        )
+            size: .thumbnail,
+            loader: InMemoryImageLoader(error: .network(.httpStatus(HTTPStatus.forbidden))),
+        ))
     }
 }

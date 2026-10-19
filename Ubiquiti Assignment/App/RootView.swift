@@ -19,10 +19,10 @@ struct RootView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ProductListView(
-                viewModel: ProductListViewModel(repository: dependencies.feedRepository),
+            ProductListView(viewModel: ProductListViewModel(
+                repository: dependencies.feedRepository,
                 imageLoader: dependencies.imageLoader,
-            )
+            ))
             .navigationDestination(for: Route.self, destination: destination)
         }
     }

@@ -7,14 +7,10 @@ import SwiftUI
 /// is stale, it only renders what the view model derived.
 struct ProductListView: View {
     @State private var viewModel: ProductListViewModel
-    private let imageLoader: any ImageLoader
 
-    /// - Parameters:
-    ///   - viewModel: Built by whoever owns the navigation stack; the view keeps it for its lifetime.
-    ///   - imageLoader: The image seam the rows' thumbnails load through.
-    init(viewModel: ProductListViewModel, imageLoader: any ImageLoader) {
+    /// - Parameter viewModel: Built by whoever owns the navigation stack; the view keeps it for its lifetime.
+    init(viewModel: ProductListViewModel) {
         _viewModel = State(wrappedValue: viewModel)
-        self.imageLoader = imageLoader
     }
 
     // MARK: - View
@@ -44,7 +40,7 @@ struct ProductListView: View {
         case let .loaded(products):
             ProductListContent(
                 products: products,
-                imageLoader: imageLoader,
+                thumbnail: viewModel.thumbnailViewModel,
                 isStale: viewModel.staleError != nil,
                 isRefreshing: viewModel.isRefreshing,
                 refresh: viewModel.refresh,
@@ -56,50 +52,48 @@ struct ProductListView: View {
 
 #Preview("Loaded") {
     NavigationStack {
-        ProductListView(
-            viewModel: ProductListViewModel(repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged)),
+        ProductListView(viewModel: ProductListViewModel(
+            repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged),
             imageLoader: InMemoryImageLoader(),
-        )
+        ))
     }
 }
 
 #Preview("Stale") {
     NavigationStack {
-        ProductListView(
-            viewModel: ProductListViewModel(repository: InMemoryFeedRepository(
+        ProductListView(viewModel: ProductListViewModel(
+            repository: InMemoryFeedRepository(
                 cached: .preview,
                 error: .network(.network(URLError(.notConnectedToInternet))),
-            )),
+            ),
             imageLoader: InMemoryImageLoader(),
-        )
+        ))
     }
 }
 
 #Preview("Empty") {
     NavigationStack {
-        ProductListView(
-            viewModel: ProductListViewModel(
-                repository: InMemoryFeedRepository(refresh: .updated(Feed(version: "empty", products: []))),
-            ),
+        ProductListView(viewModel: ProductListViewModel(
+            repository: InMemoryFeedRepository(refresh: .updated(Feed(version: "empty", products: []))),
             imageLoader: InMemoryImageLoader(),
-        )
+        ))
     }
 }
 
 #Preview("Error") {
     NavigationStack {
-        ProductListView(
-            viewModel: ProductListViewModel(repository: InMemoryFeedRepository(error: .network(.httpStatus(503)))),
+        ProductListView(viewModel: ProductListViewModel(
+            repository: InMemoryFeedRepository(error: .network(.httpStatus(503))),
             imageLoader: InMemoryImageLoader(),
-        )
+        ))
     }
 }
 
 #Preview("Loading") {
     NavigationStack {
-        ProductListView(
-            viewModel: ProductListViewModel(repository: InMemoryFeedRepository.neverAnswering()),
+        ProductListView(viewModel: ProductListViewModel(
+            repository: InMemoryFeedRepository.neverAnswering(),
             imageLoader: InMemoryImageLoader.pending,
-        )
+        ))
     }
 }
