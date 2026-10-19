@@ -41,9 +41,12 @@ make lint     # dry run, exits non-zero on any diff
 
 - Dark mode isn't supported since there are no desings for it. [ColorTokensKit](https://github.com/metasidd/ColorTokensKit-Swift) was considered for calculating dark mode colors, but that's probably an overkill for a home assignment.
 - On a real project i'd probably use [swift-dependencies](https://github.com/pointfreeco/swift-dependencies) library to simplify dependency injection, but for a such a small project direct dependencies through initialisers work just fine.
+- [Kingfisher](https://github.com/onevcat/Kingfisher/) is used for image caching in memory and on disk.
 
 _More to be distilled from `docs/DECISIONS.md` before submission._
 
 ## Libraries used and why
+
+[Kingfisher](https://github.com/onevcat/Kingfisher) loads and caches product images: one download per URL however many rows ask, a memory cache that empties on a memory warning, and a disk cache with expiry and a size cap. Wrapped by one Core type behind an `ImageLoader` protocol, so nothing else imports it. See `docs/DECISIONS.md`, 2026-10-18, for why a library over a hand-rolled actor.
 
 [Swift LSP](https://claude.com/marketplace/plugins/swift-lsp) Decreases LLM token usage by offering compiler-verified facts about symbols, types and call sites, so that LLMs don't have rely on text lookup as much.

@@ -6,7 +6,8 @@ import Foundation
 /// Inputs enter as subjects: the feed the repository streams, whether a refresh is in flight, and how the last
 /// refresh ended. The screen state is a `CombineLatest` over the three and the stale error over two of them, so
 /// no intent method computes a state by hand; see the Concurrency and Combine section of `docs/CODING_STANDARDS.md`.
-/// `init` only wires the pipeline; `load()` starts the subscription and the first refresh.
+/// `init` only wires the pipeline; `load()` starts the subscription and the first refresh. The rows' thumbnails are
+/// built here too, so the views never see the image loader.
 @Observable
 final class ProductListViewModel {
     /// What the screen shows.
@@ -18,6 +19,7 @@ final class ProductListViewModel {
     private(set) var isRefreshing = false
 
     private let repository: any FeedRepository
+    private let imageLoader: any ImageLoader
     private let feedSubject = CurrentValueSubject<Feed?, Never>(nil)
     private let refreshingSubject = CurrentValueSubject<Bool, Never>(false)
     private let refreshFailureSubject = CurrentValueSubject<FeedError?, Never>(nil)
@@ -26,9 +28,12 @@ final class ProductListViewModel {
     @ObservationIgnored private var feedTask: Task<Void, Never>?
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
 
-    /// - Parameter repository: the feed seam the list reads and refreshes through.
-    init(repository: any FeedRepository) {
+    /// - Parameters:
+    ///   - repository: The feed seam the list reads and refreshes through.
+    ///   - imageLoader: The image seam the rows' thumbnails load through.
+    init(repository: any FeedRepository, imageLoader: any ImageLoader) {
         self.repository = repository
+        self.imageLoader = imageLoader
 
         Publishers.CombineLatest3(
             feedSubject.removeDuplicates { $0?.version == $1?.version },
@@ -80,6 +85,14 @@ final class ProductListViewModel {
     /// Asks the server again after a failure, without waiting; the Retry button calls it.
     func retry() {
         startRefresh()
+    }
+
+    // MARK: - Child view models
+
+    /// The thumbnail slot of one row. Built on every render of the row and kept by its view as `@State`, like the
+    /// screen view models the root builds; see `docs/DECISIONS.md`, 2026-10-19.
+    func thumbnailViewModel(for product: Product) -> ProductImageViewModel {
+        ProductImageViewModel(product: product, size: .thumbnail, loader: imageLoader)
     }
 
     // MARK: - Private helpers

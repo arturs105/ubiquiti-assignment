@@ -5,6 +5,7 @@ import SwiftUI
 /// Pull to refresh awaits the view model's refresh, so the system indicator ends when the server has answered.
 struct ProductListContent: View {
     private let products: [Product]
+    private let thumbnail: (Product) -> ProductImageViewModel
     private let isStale: Bool
     private let isRefreshing: Bool
     private let refresh: @Sendable () async -> Void
@@ -12,18 +13,21 @@ struct ProductListContent: View {
 
     /// - Parameters:
     ///   - products: The rows, in feed order.
+    ///   - thumbnail: Builds the thumbnail slot of one row; the list view model provides it.
     ///   - isStale: Whether the refresh behind the rows failed; the stale banner then shows above them.
     ///   - isRefreshing: Whether a refresh is in flight; the banner then shows a spinner in place of Retry.
     ///   - refresh: Runs on pull to refresh and returns when the server has answered.
     ///   - retry: Runs when the banner's Retry is tapped.
     init(
         products: [Product],
+        thumbnail: @escaping (Product) -> ProductImageViewModel,
         isStale: Bool,
         isRefreshing: Bool,
         refresh: @escaping @Sendable () async -> Void,
         retry: @escaping () -> Void,
     ) {
         self.products = products
+        self.thumbnail = thumbnail
         self.isStale = isStale
         self.isRefreshing = isRefreshing
         self.refresh = refresh
@@ -35,7 +39,7 @@ struct ProductListContent: View {
     var body: some View {
         List(products) { product in
             NavigationLink(value: Route.product(product.id)) {
-                ProductRow(product: product)
+                ProductRow(product: product, thumbnail: thumbnail(product))
             }
             .listRowInsets(EdgeInsets(top: 0, leading: Spacing.large, bottom: 0, trailing: Spacing.large))
             .listRowBackground(Color.backgroundPrimary)
@@ -60,6 +64,7 @@ struct ProductListContent: View {
     NavigationStack {
         ProductListContent(
             products: Product.previews,
+            thumbnail: { ProductImageViewModel(product: $0, size: .thumbnail, loader: InMemoryImageLoader()) },
             isStale: false,
             isRefreshing: false,
             refresh: {},
@@ -73,6 +78,7 @@ struct ProductListContent: View {
     NavigationStack {
         ProductListContent(
             products: Product.previews,
+            thumbnail: { ProductImageViewModel(product: $0, size: .thumbnail, loader: InMemoryImageLoader()) },
             isStale: true,
             isRefreshing: false,
             refresh: {},
@@ -86,6 +92,7 @@ struct ProductListContent: View {
     NavigationStack {
         ProductListContent(
             products: Product.previews,
+            thumbnail: { ProductImageViewModel(product: $0, size: .thumbnail, loader: InMemoryImageLoader()) },
             isStale: true,
             isRefreshing: true,
             refresh: {},
