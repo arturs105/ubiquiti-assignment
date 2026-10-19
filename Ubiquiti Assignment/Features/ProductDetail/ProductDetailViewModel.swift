@@ -93,15 +93,23 @@ final class ProductDetailViewModel {
         guard refreshTask == nil else { return }
         refreshingSubject.send(true)
         refreshTask = Task { [weak self, repository] in
+            var refreshed: Feed?
             var failure: FeedError?
             do throws(FeedError) {
-                _ = try await repository.refresh()
+                if case let .updated(feed) = try await repository.refresh() {
+                    refreshed = feed
+                }
             } catch {
                 failure = error
             }
             // Only `deinit` cancels a refresh, and by then there is no view model to update.
             guard let self else { return }
             refreshTask = nil
+            // The stream delivers the same feed on the feed task, in an order the scheduler picks; sending it here
+            // first means the flag never clears over the old feed, and the stream's copy is dropped by version.
+            if let refreshed {
+                feedSubject.send(refreshed)
+            }
             refreshFailureSubject.send(failure)
             refreshingSubject.send(false)
         }
