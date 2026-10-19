@@ -11,9 +11,14 @@ import Foundation
 nonisolated struct Dependencies: Sendable {
     /// The feed seam every screen reads and refreshes through.
     let feedRepository: any FeedRepository
+    /// The image seam every row and the details hero load through.
+    let imageLoader: any ImageLoader
 
-    /// The production graph: the cached repository over a conditional `URLSession` fetch.
+    /// The production graph: the cached repository over a conditional `URLSession` fetch, and Kingfisher for images.
     static func live() -> Dependencies {
-        Dependencies(feedRepository: CachedFeedRepository(client: URLSessionFeedClient()))
+        Dependencies(
+            feedRepository: CachedFeedRepository(client: URLSessionFeedClient()),
+            imageLoader: KingfisherImageLoader(),
+        )
     }
 }
