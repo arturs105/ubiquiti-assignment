@@ -12,7 +12,8 @@ struct ProductCategoryTests {
     @Test func camerasIsTheCameraDeviceType() {
         #expect(ProductCategory.cameras.contains(product(line: .unifiProtect, deviceType: .camera)))
         #expect(!ProductCategory.cameras.contains(product(line: .unifiProtect, deviceType: sensor)))
-        #expect(!ProductCategory.cameras.contains(product(line: .unifiConnect, deviceType: .camera)))
+        #expect(ProductCategory.cameras.contains(product(line: .unifiConnect, deviceType: .camera)))
+        #expect(!ProductCategory.cameras.contains(product(line: .unifiConnect)))
     }
 
     @Test(arguments: [Line.ID.unifiConnect, .unifiAccess, .unifiLED, .unifiTalk, .mfi])
