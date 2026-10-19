@@ -11,6 +11,10 @@ enum Metrics {
     /// Height of an attribute row on the details screen.
     static let detailRowHeight: CGFloat = 44
 
+    /// Height of the hero image block on the details screen. Not in Figma, whose details frame has no image; see
+    /// `docs/DECISIONS.md`, 2026-10-19 "The details hero".
+    static let heroHeight: CGFloat = 240
+
     /// `UI Globals/radius-row`: corner radius of a grouped row block.
     static let rowCornerRadius: CGFloat = 10
 

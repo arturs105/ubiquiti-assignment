@@ -7,7 +7,8 @@ import Foundation
 /// ended. The screen state is a `CombineLatest` over the three, so no intent method computes a state by hand; see
 /// the Concurrency and Combine section of `docs/CODING_STANDARDS.md`. The list refreshed on its way here, so
 /// `load()` only subscribes and asks the server again when the cached feed does not hold the product; see
-/// `docs/DECISIONS.md`, 2026-10-18 "The details screen refreshes only when its product is missing".
+/// `docs/DECISIONS.md`, 2026-10-18 "The details screen refreshes only when its product is missing". The hero
+/// image's slot is built here too, so the views never see the image loader.
 @Observable
 final class ProductDetailViewModel {
     /// What the screen shows.
@@ -15,6 +16,7 @@ final class ProductDetailViewModel {
 
     private let productID: Product.ID
     private let repository: any FeedRepository
+    private let imageLoader: any ImageLoader
     private let feedSubject = CurrentValueSubject<Feed?, Never>(nil)
     private let refreshingSubject = CurrentValueSubject<Bool, Never>(false)
     private let refreshFailureSubject = CurrentValueSubject<FeedError?, Never>(nil)
@@ -26,9 +28,11 @@ final class ProductDetailViewModel {
     /// - Parameters:
     ///   - productID: The product the route asked for.
     ///   - repository: The feed seam the product is looked up in.
-    init(productID: Product.ID, repository: any FeedRepository) {
+    ///   - imageLoader: The image seam the hero loads through.
+    init(productID: Product.ID, repository: any FeedRepository, imageLoader: any ImageLoader) {
         self.productID = productID
         self.repository = repository
+        self.imageLoader = imageLoader
 
         Publishers.CombineLatest3(
             feedSubject.removeDuplicates { $0?.version == $1?.version },
@@ -70,6 +74,14 @@ final class ProductDetailViewModel {
     /// Asks the server again after a failure, without waiting; the Retry button calls it.
     func retry() {
         startRefresh()
+    }
+
+    // MARK: - Child view models
+
+    /// The hero slot at the top of the loaded screen. Built on every render of the content and kept by its view as
+    /// `@State`, like the rows' thumbnails; see `docs/DECISIONS.md`, 2026-10-19.
+    func heroViewModel(for product: Product) -> ProductImageViewModel {
+        ProductImageViewModel(product: product, size: .hero, loader: imageLoader)
     }
 
     // MARK: - Private helpers

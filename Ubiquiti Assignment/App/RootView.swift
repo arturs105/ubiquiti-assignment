@@ -33,7 +33,11 @@ struct RootView: View {
     private func destination(for route: Route) -> some View {
         switch route {
         case let .product(id):
-            ProductDetailView(viewModel: ProductDetailViewModel(productID: id, repository: dependencies.feedRepository))
+            ProductDetailView(viewModel: ProductDetailViewModel(
+                productID: id,
+                repository: dependencies.feedRepository,
+                imageLoader: dependencies.imageLoader,
+            ))
         }
     }
 }

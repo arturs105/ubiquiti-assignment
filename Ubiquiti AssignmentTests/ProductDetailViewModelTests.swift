@@ -7,7 +7,7 @@ import Testing
 struct ProductDetailViewModelTests {
     @Test func showsTheProductFromTheCachedFeedWithoutAskingTheServer() async {
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
-        let viewModel = ProductDetailViewModel(productID: camera.id, repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         #expect(viewModel.state == .loading)
         viewModel.load()
@@ -19,7 +19,7 @@ struct ProductDetailViewModelTests {
     @Test func asksTheServerWhenTheCachedFeedDoesNotHoldTheProduct() async {
         let others = Feed(version: "v1", products: Array(Product.previews.dropFirst()))
         let repository = InMemoryFeedRepository(cached: others, refresh: .updated(.preview))
-        let viewModel = ProductDetailViewModel(productID: camera.id, repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         viewModel.load()
 
@@ -30,7 +30,7 @@ struct ProductDetailViewModelTests {
     @Test func isEmptyWhenTheServerConfirmsAFeedWithoutTheProduct() async {
         let others = Feed(version: "v1", products: Array(Product.previews.dropFirst()))
         let repository = InMemoryFeedRepository(cached: others, refresh: .unchanged)
-        let viewModel = ProductDetailViewModel(productID: camera.id, repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         viewModel.load()
 
@@ -38,7 +38,7 @@ struct ProductDetailViewModelTests {
     }
 
     @Test func failsWhenNothingIsCachedAndTheRefreshFails() async {
-        let viewModel = ProductDetailViewModel(productID: camera.id, repository: InMemoryFeedRepository(error: offline))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(error: offline))
 
         viewModel.load()
 
@@ -46,7 +46,7 @@ struct ProductDetailViewModelTests {
     }
 
     @Test func aRetryFromTheErrorStateReadsAsLoadingUntilItFails() async {
-        let viewModel = ProductDetailViewModel(productID: camera.id, repository: InMemoryFeedRepository(error: offline))
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(error: offline))
         viewModel.load()
         #expect(await settles(viewModel, at: .failed(offline)))
 
@@ -58,7 +58,7 @@ struct ProductDetailViewModelTests {
 
     @Test func anUpdateAfterAFailureLoadsTheProduct() async {
         let repository = InMemoryFeedRepository(result: .failure(offline))
-        let viewModel = ProductDetailViewModel(productID: camera.id, repository: repository)
+        let viewModel = makeViewModel(repository: repository)
         viewModel.load()
         #expect(await settles(viewModel, at: .failed(offline)))
 
@@ -69,7 +69,7 @@ struct ProductDetailViewModelTests {
 
     @Test func anUpdateNobodyOnScreenAskedForReplacesTheProduct() async {
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
-        let viewModel = ProductDetailViewModel(productID: camera.id, repository: repository)
+        let viewModel = makeViewModel(repository: repository)
         viewModel.load()
         #expect(await settles(viewModel, at: .loaded(camera)))
 
@@ -89,7 +89,7 @@ struct ProductDetailViewModelTests {
 
     @Test func anUpdateThatDropsTheProductIsEmpty() async {
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
-        let viewModel = ProductDetailViewModel(productID: camera.id, repository: repository)
+        let viewModel = makeViewModel(repository: repository)
         viewModel.load()
         #expect(await settles(viewModel, at: .loaded(camera)))
 
@@ -100,7 +100,7 @@ struct ProductDetailViewModelTests {
 
     @Test func loadingTwiceRefreshesOnce() async {
         let repository = InMemoryFeedRepository(refresh: .updated(.preview))
-        let viewModel = ProductDetailViewModel(productID: camera.id, repository: repository)
+        let viewModel = makeViewModel(repository: repository)
 
         viewModel.load()
         viewModel.load()
@@ -109,6 +109,23 @@ struct ProductDetailViewModelTests {
         #expect(await repository.refreshCount == 1)
     }
 
+    @Test func theHeroSlotAsksTheLoaderForTheHeroOfItsProduct() async {
+        let loader = InMemoryImageLoader()
+        let viewModel = ProductDetailViewModel(
+            productID: camera.id,
+            repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged),
+            imageLoader: loader,
+        )
+
+        await viewModel.heroViewModel(for: camera).load()
+
+        #expect(loader.requests == [InMemoryImageLoader.Request(productID: camera.id, size: .hero)])
+    }
+
     private let camera = Product.previews[0]
     private let offline = FeedError.network(.network(URLError(.notConnectedToInternet)))
+
+    private func makeViewModel(repository: any FeedRepository) -> ProductDetailViewModel {
+        ProductDetailViewModel(productID: camera.id, repository: repository, imageLoader: InMemoryImageLoader())
+    }
 }

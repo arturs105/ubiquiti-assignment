@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// Switches over the view model's state so each state gets its dedicated view. The product is read from the
 /// repository's stream rather than carried from the list, so a refresh while the screen is open updates it; see
-/// `docs/DECISIONS.md`, 2026-10-18 "Route by ID". The image lands with #9.
+/// `docs/DECISIONS.md`, 2026-10-18 "Route by ID".
 struct ProductDetailView: View {
     @State private var viewModel: ProductDetailViewModel
 
@@ -38,7 +38,7 @@ struct ProductDetailView: View {
         case let .failed(error):
             ErrorView(error: error, retry: viewModel.retry)
         case let .loaded(product):
-            ProductDetailContent(product: product)
+            ProductDetailContent(product: product, hero: viewModel.heroViewModel(for: product))
         }
     }
 
@@ -57,6 +57,7 @@ struct ProductDetailView: View {
         ProductDetailView(viewModel: ProductDetailViewModel(
             productID: Product.previews[0].id,
             repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged),
+            imageLoader: InMemoryImageLoader(),
         ))
     }
 }
@@ -66,6 +67,7 @@ struct ProductDetailView: View {
         ProductDetailView(viewModel: ProductDetailViewModel(
             productID: UUID(),
             repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged),
+            imageLoader: InMemoryImageLoader(),
         ))
     }
 }
@@ -75,6 +77,7 @@ struct ProductDetailView: View {
         ProductDetailView(viewModel: ProductDetailViewModel(
             productID: UUID(),
             repository: InMemoryFeedRepository(error: .network(.httpStatus(503))),
+            imageLoader: InMemoryImageLoader(),
         ))
     }
 }
@@ -84,6 +87,7 @@ struct ProductDetailView: View {
         ProductDetailView(viewModel: ProductDetailViewModel(
             productID: UUID(),
             repository: InMemoryFeedRepository.neverAnswering(),
+            imageLoader: InMemoryImageLoader.pending,
         ))
     }
 }
