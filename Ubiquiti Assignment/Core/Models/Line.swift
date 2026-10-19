@@ -21,7 +21,6 @@ extension Line {
         static let unifiConnect = ID(rawValue: "unifi-connect")
         static let unifiAccess = ID(rawValue: "unifi-access")
         static let unifiLED = ID(rawValue: "unifi-led")
-        static let unifiTalk = ID(rawValue: "unifi-talk")
         static let mfi = ID(rawValue: "mfi")
         /// The two placeholder products ("Unknown Device", "Unknown Console") sit under this line.
         static let unknown = ID(rawValue: "unknown")

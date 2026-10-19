@@ -12,26 +12,42 @@ struct ProductCategoryTests {
     @Test func camerasIsTheCameraDeviceType() {
         // The rule is the device type, not the line; see `docs/DECISIONS.md`, 2026-10-19.
         #expect(ProductCategory.cameras.contains(product(line: .unifiProtect, deviceType: .camera)))
-        #expect(!ProductCategory.cameras.contains(product(line: .unifiProtect, deviceType: sensor)))
+        #expect(!ProductCategory.cameras.contains(product(line: .unifiProtect, deviceType: .sensor)))
         #expect(ProductCategory.cameras.contains(product(line: .unifiConnect, deviceType: .camera)))
         #expect(!ProductCategory.cameras.contains(product(line: .unifiConnect)))
     }
 
-    @Test(arguments: [Line.ID.unifiConnect, .unifiAccess, .unifiLED, .unifiTalk, .mfi])
-    func iotHoldsTheFiveIoTLines(line: Line.ID) {
+    @Test(arguments: [Line.ID.unifiConnect, .unifiAccess, .unifiLED, .mfi])
+    func iotHoldsTheFourIoTLinesWhateverTheDeviceType(line: Line.ID) {
         #expect(ProductCategory.iot.contains(product(line: line)))
+        #expect(ProductCategory.iot.contains(product(line: line, deviceType: .init(rawValue: "power-supply"))))
     }
 
-    @Test(arguments: [Line.ID.unifiProtect, .unknown, Line.ID(rawValue: "unifi-network"), Line.ID(rawValue: "airmax")])
-    func iotLeavesOtherLinesToAll(line: Line.ID) {
+    @Test(arguments: [Product.DeviceType.sensor, .light, .doorlock, .chime, .alarm])
+    func iotHoldsProtectsSensingAndActuatingKinds(kind: Product.DeviceType) {
+        #expect(ProductCategory.iot.contains(product(line: .unifiProtect, deviceType: kind)))
+    }
+
+    @Test(arguments: [Product.DeviceType.camera, .init(rawValue: "console"), .init(rawValue: "audio")])
+    func iotLeavesTheRestOfProtectToAll(kind: Product.DeviceType) {
+        #expect(!ProductCategory.iot.contains(product(line: .unifiProtect, deviceType: kind)))
+    }
+
+    @Test(arguments: [
+        Line.ID(rawValue: "unifi-talk"),
+        .unknown,
+        Line.ID(rawValue: "unifi-network"),
+        Line.ID(rawValue: "airmax")
+    ])
+    func iotLeavesOtherLinesToAllEvenForASensor(line: Line.ID) {
+        // The device-type rule is Protect's alone; see `docs/DECISIONS.md`, 2026-10-19.
         #expect(!ProductCategory.iot.contains(product(line: line)))
+        #expect(!ProductCategory.iot.contains(product(line: line, deviceType: .sensor)))
     }
 
     @Test func tabsAreAllCamerasIoTInOrder() {
         #expect(ProductCategory.allCases == [.all, .cameras, .iot])
     }
-
-    private let sensor = Product.DeviceType(rawValue: "sensor")
 
     private func product(line: Line.ID, deviceType: Product.DeviceType = .init(rawValue: "unknown")) -> Product {
         Product(

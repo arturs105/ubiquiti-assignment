@@ -220,5 +220,10 @@ extension Product {
         }
 
         static let camera = DeviceType(rawValue: "camera")
+        static let sensor = DeviceType(rawValue: "sensor")
+        static let light = DeviceType(rawValue: "light")
+        static let doorlock = DeviceType(rawValue: "doorlock")
+        static let chime = DeviceType(rawValue: "chime")
+        static let alarm = DeviceType(rawValue: "alarm")
     }
 }
