@@ -10,6 +10,7 @@ struct ProductCategoryTests {
     }
 
     @Test func camerasIsTheCameraDeviceType() {
+        // The rule is the device type, not the line; see `docs/DECISIONS.md`, 2026-10-19.
         #expect(ProductCategory.cameras.contains(product(line: .unifiProtect, deviceType: .camera)))
         #expect(!ProductCategory.cameras.contains(product(line: .unifiProtect, deviceType: sensor)))
         #expect(ProductCategory.cameras.contains(product(line: .unifiConnect, deviceType: .camera)))
@@ -24,13 +25,6 @@ struct ProductCategoryTests {
     @Test(arguments: [Line.ID.unifiProtect, .unknown, Line.ID(rawValue: "unifi-network"), Line.ID(rawValue: "airmax")])
     func iotLeavesOtherLinesToAll(line: Line.ID) {
         #expect(!ProductCategory.iot.contains(product(line: line)))
-    }
-
-    @Test func aProtectAccessoryIsNotACamera() {
-        // The rule is the device type, not the line; see `docs/DECISIONS.md`, 2026-10-19.
-        let protectSensor = product(line: .unifiProtect, deviceType: sensor)
-
-        #expect(!ProductCategory.cameras.contains(protectSensor))
     }
 
     @Test func tabsAreAllCamerasIoTInOrder() {
