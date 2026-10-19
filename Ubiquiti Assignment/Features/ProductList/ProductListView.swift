@@ -64,20 +64,13 @@ struct ProductListView: View {
         .padding(.top, Spacing.small)
     }
 
-    /// Which empty it is: the whole catalogue, the checked lines, or only the selected tab. The view model derives
-    /// the first two; the third's copy comes from the tab on screen.
+    /// Which empty it is: the whole catalogue, or only the selected tab. The view model derives the first; the
+    /// second's copy comes from the tab on screen. Checked lines never empty a tab: the menu offers only lines
+    /// with a product, and a line an update drops unchecks itself.
     @ViewBuilder
     private var emptyState: some View {
         if viewModel.isCatalogueEmpty {
             EmptyStateView(title: "No products", message: "The product list is empty. Pull down to try again.")
-        } else if !viewModel.selectedLines.isEmpty {
-            // Only reachable when an update drops the last product of a checked line: the menu offers no line
-            // without one.
-            EmptyStateView(
-                title: "No matching products",
-                message: "Nothing in the checked lines any more. Change the line filter.",
-                systemImage: ProductCategory.emptySymbol,
-            )
         } else {
             EmptyStateView(
                 title: viewModel.selectedCategory.emptyTitle,

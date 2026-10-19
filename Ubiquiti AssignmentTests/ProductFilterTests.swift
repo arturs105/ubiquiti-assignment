@@ -21,6 +21,12 @@ struct ProductFilterTests {
         #expect(Product.previews.filter(filter.contains) == [Product.previews[0], Product.previews[2]])
     }
 
+    @Test func keepingTheOfferedLinesUnchecksTheOthers() {
+        let filter = ProductFilter(category: .all, lines: [.unifiProtect, .unifiConnect])
+
+        #expect(filter.keeping([.unifiProtect, .unifiAccess]) == ProductFilter(category: .all, lines: [.unifiProtect]))
+    }
+
     @Test func aCheckedLineOutsideTheTabKeepsNothing() {
         // The tab rules first: a line checked under All does not pull its products into Cameras.
         let filter = ProductFilter(category: .cameras, lines: [.unifiConnect])

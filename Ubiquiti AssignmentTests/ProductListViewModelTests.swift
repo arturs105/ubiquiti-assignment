@@ -314,19 +314,21 @@ struct ProductListViewModelTests {
         #expect(viewModel.selectedLines == [.unifiConnect])
     }
 
-    @Test func anUpdateDroppingACheckedLineLeavesTheListEmpty() async {
+    @Test func anUpdateDroppingACheckedLineUnchecksIt() async {
         let repository = InMemoryFeedRepository(cached: .preview, refresh: .unchanged)
         let viewModel = ProductListViewModel(repository: repository)
         viewModel.load()
         await viewModel.refresh()
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
         viewModel.toggle(line: .unifiConnect)
+        viewModel.toggle(line: .unifiProtect)
 
-        await repository.publish(Feed(version: "v2", products: [Product.previews[0]]))
+        await repository.publish(Feed(version: "v2", products: [Product.previews[0], Product.previews[1]]))
 
-        #expect(await settles(viewModel, at: .empty))
-        #expect(viewModel.isCatalogueEmpty == false)
-        #expect(viewModel.selectedLines == [.unifiConnect])
+        // The menu has no entry for the dropped line, so nothing else could uncheck it; the other check stays.
+        #expect(await settles(viewModel, at: .loaded([Product.previews[0]])))
+        #expect(viewModel.selectedLines == [.unifiProtect])
+        #expect(viewModel.availableLines == [Product.previews[0].line, Product.previews[1].line])
     }
 
     private let offline = FeedError.network(.network(URLError(.notConnectedToInternet)))

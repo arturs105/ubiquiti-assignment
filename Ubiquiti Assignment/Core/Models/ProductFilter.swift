@@ -20,4 +20,10 @@ nonisolated struct ProductFilter: Hashable, Sendable {
         guard category.contains(product) else { return false }
         return lines.isEmpty || lines.contains(product.line.id)
     }
+
+    /// The same filter with any checked line that is not among `offered` unchecked, so a line an update dropped
+    /// from the tab does not keep narrowing the list with no menu entry to uncheck it.
+    func keeping(_ offered: some Sequence<Line.ID>) -> ProductFilter {
+        ProductFilter(category: category, lines: lines.intersection(offered))
+    }
 }
