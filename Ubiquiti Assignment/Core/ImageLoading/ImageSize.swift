@@ -9,6 +9,5 @@ nonisolated enum ImageSize: Int, CaseIterable, Hashable, Sendable {
     /// details frame has no image to measure (see `docs/DECISIONS.md`, 2026-10-19 "The details hero").
     case hero = 640
 
-    /// The width in pixels the CDN is asked for.
     var pixelWidth: Int { rawValue }
 }

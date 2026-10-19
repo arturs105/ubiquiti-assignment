@@ -16,7 +16,6 @@ import Foundation
 final class ProductListViewModel {
     /// What the screen shows: the products under the selected tab.
     private(set) var state: LoadState<[Product]> = .loading
-    /// The tab the list is filtered by.
     private(set) var selectedCategory: ProductCategory = .all
     /// The lines checked in the filter menu, among those it offers; empty means every line under the tab.
     private(set) var selectedLines: Set<Line.ID> = []
@@ -42,9 +41,6 @@ final class ProductListViewModel {
     @ObservationIgnored private var feedTask: Task<Void, Never>?
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
 
-    /// - Parameters:
-    ///   - repository: The feed seam the list reads and refreshes through.
-    ///   - imageLoader: The image seam the rows' thumbnails load through.
     init(repository: any FeedRepository, imageLoader: any ImageLoader) {
         self.repository = repository
         self.imageLoader = imageLoader
@@ -155,7 +151,6 @@ final class ProductListViewModel {
 
     // MARK: - Private helpers
 
-    /// The refresh in flight, or a new one when none is.
     @discardableResult
     private func startRefresh() -> Task<Void, Never> {
         if let refreshTask {

@@ -10,9 +10,7 @@ struct ProductDetailContent: View {
     private let product: Product
     private let hero: ProductImageViewModel
 
-    /// - Parameters:
-    ///   - product: The product whose attributes are shown.
-    ///   - hero: The hero slot, built by the details view model.
+    /// - Parameter hero: The hero slot, built by the details view model.
     init(product: Product, hero: ProductImageViewModel) {
         self.product = product
         self.hero = hero

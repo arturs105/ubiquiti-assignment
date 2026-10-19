@@ -11,7 +11,6 @@ import Foundation
 /// image's slot is built here too, so the views never see the image loader.
 @Observable
 final class ProductDetailViewModel {
-    /// What the screen shows.
     private(set) var state: LoadState<Product> = .loading
 
     private let productID: Product.ID
@@ -25,10 +24,6 @@ final class ProductDetailViewModel {
     @ObservationIgnored private var feedTask: Task<Void, Never>?
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
 
-    /// - Parameters:
-    ///   - productID: The product the route asked for.
-    ///   - repository: The feed seam the product is looked up in.
-    ///   - imageLoader: The image seam the hero loads through.
     init(productID: Product.ID, repository: any FeedRepository, imageLoader: any ImageLoader) {
         self.productID = productID
         self.repository = repository
@@ -88,7 +83,6 @@ final class ProductDetailViewModel {
 
     // MARK: - Private helpers
 
-    /// Starts a refresh unless one is in flight.
     private func startRefresh() {
         guard refreshTask == nil else { return }
         refreshingSubject.send(true)

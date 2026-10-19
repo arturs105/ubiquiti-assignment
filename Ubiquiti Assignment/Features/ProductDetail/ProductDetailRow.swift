@@ -7,7 +7,6 @@ import SwiftUI
 struct ProductDetailRow: View {
     private let attribute: ProductAttribute
 
-    /// - Parameter attribute: the label and value to show.
     init(attribute: ProductAttribute) {
         self.attribute = attribute
     }

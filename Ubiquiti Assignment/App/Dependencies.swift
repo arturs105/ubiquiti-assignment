@@ -9,9 +9,7 @@ import Foundation
 /// visible. See `docs/DECISIONS.md`, 2026-10-18 "`Dependencies` is a value built once by the App and passed by
 /// initialiser".
 nonisolated struct Dependencies: Sendable {
-    /// The feed seam every screen reads and refreshes through.
     let feedRepository: any FeedRepository
-    /// The image seam every row and the details hero load through.
     let imageLoader: any ImageLoader
 
     /// The production graph: the cached repository over a conditional `URLSession` fetch, and Kingfisher for images.

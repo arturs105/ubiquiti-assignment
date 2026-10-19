@@ -23,17 +23,14 @@ actor InMemoryFeedRepository: FeedRepository {
         self.result = result
     }
 
-    /// A repository holding `cached` (or nothing) whose every refresh ends in `result`.
     init(cached: Feed? = nil, result: Result<FeedRefresh, FeedError>) {
         self.init(cached: cached, script: result)
     }
 
-    /// A repository holding `cached` (or nothing) whose every refresh returns `refresh`.
     init(cached: Feed? = nil, refresh: FeedRefresh) {
         self.init(cached: cached, result: .success(refresh))
     }
 
-    /// A repository holding `cached` (or nothing) whose every refresh throws `error`.
     init(cached: Feed? = nil, error: FeedError) {
         self.init(cached: cached, result: .failure(error))
     }

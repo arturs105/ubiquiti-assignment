@@ -132,7 +132,6 @@ final class KingfisherImageLoaderTests {
 
         async let first = loader.image(for: product, size: .thumbnail)
         async let second = loader.image(for: product, size: .thumbnail)
-        // Both callers get the image, from the one request.
         _ = try await (first, second)
 
         #expect(StubURLProtocol.requestCount(for: url) == 1)

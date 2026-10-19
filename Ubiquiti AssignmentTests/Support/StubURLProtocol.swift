@@ -42,12 +42,10 @@ final nonisolated class StubURLProtocol: URLProtocol {
         scripts.withLock { $0[url] = script }
     }
 
-    /// The last request the stub received for `url`, if any.
     static func request(for url: URL) -> URLRequest? {
         requests.withLock { $0[url]?.last }
     }
 
-    /// How many requests the stub received for `url`.
     static func requestCount(for url: URL) -> Int {
         requests.withLock { $0[url]?.count ?? 0 }
     }

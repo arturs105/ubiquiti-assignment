@@ -9,9 +9,7 @@ struct ProductRow: View {
     private let product: Product
     private let thumbnail: ProductImageViewModel
 
-    /// - Parameters:
-    ///   - product: The product to show.
-    ///   - thumbnail: The thumbnail slot, built by the list view model.
+    /// - Parameter thumbnail: The thumbnail slot, built by the list view model.
     init(product: Product, thumbnail: ProductImageViewModel) {
         self.product = product
         self.thumbnail = thumbnail
