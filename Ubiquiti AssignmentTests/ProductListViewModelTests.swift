@@ -148,13 +148,40 @@ struct ProductListViewModelTests {
     }
 
     @Test func aRetryFromTheErrorStateThatSucceedsLoadsTheList() async {
-        let repository = InMemoryFeedRepository.neverAnswering()
+        // Nothing is cached, so the list arrives only with the retry; the screen goes from the error view straight
+        // to the rows, never through the loading view.
+        let repository = InMemoryFeedRepository(error: offline)
         let viewModel = makeViewModel(repository: repository)
         viewModel.load()
+        await viewModel.refresh()
+        #expect(await settles(viewModel, at: .failed(.offline)))
+        await repository.script(.success(.updated(.preview)))
+        let recorder = StateRecorder(viewModel)
 
-        await repository.publish(.preview)
+        viewModel.retry()
 
-        #expect(await settles(viewModel, at: .loaded(Product.previews)))
+        #expect(await settles(viewModel) { $0.state == .loaded(Product.previews) && !$0.isRefreshing })
+        #expect(recorder.states.contains(.loading) == false)
+        #expect(recorder.states.first == .failed(.offline))
+        #expect(viewModel.staleError == nil)
+    }
+
+    @Test func aSuccessfulRetryOverNoFeedKeepsTheErrorUntilTheFeedLands() {
+        // The view model test above sees whichever order the scheduler picks; this pins the other one too: the
+        // refresh clearing its failure before the stream task delivers the feed.
+        var held: FeedError?
+        let inputs: [(Feed?, FeedError?)] = [(nil, offline), (nil, nil), (.preview, nil)]
+        let states = inputs.map { feed, refreshFailure in
+            held = ProductListViewModel.failure(held: held, feed: feed, refreshFailure: refreshFailure)
+            return ProductListViewModel.state(
+                feed: feed,
+                filter: ProductFilter(category: .all),
+                isRefreshing: false,
+                failure: held,
+            )
+        }
+
+        #expect(states == [.failed(.offline), .failed(.offline), .loaded(Product.previews)])
     }
 
     @Test func aFailedRefreshOverAnEmptyTabIsReportedAsStale() async {

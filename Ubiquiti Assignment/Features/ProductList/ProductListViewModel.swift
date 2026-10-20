@@ -56,8 +56,18 @@ final class ProductListViewModel {
             .map { filter, lines in filter.keeping(lines.map(\.id)) }
             .removeDuplicates()
 
+        // A refresh that succeeds with nothing on screen clears its failure before the stream task delivers the feed,
+        // in an order the scheduler picks; the failure is held until a feed is present, so the screen stays on the
+        // error view through that gap instead of flashing the loading view. The hold is a `scan` over the same tuple
+        // the state maps, not a publisher of its own beside it: a subject delivers to its subscribers in no fixed
+        // order, so a second subscription to the feed could clear the failure before the state saw the feed.
         Publishers.CombineLatest4(feed, filter, refreshingSubject, refreshFailureSubject)
-            .map(Self.state)
+            .scan((failure: FeedError?.none, state: LoadState<[Product]>.loading)) { last, input in
+                let (feed, filter, isRefreshing, refreshFailure) = input
+                let failure = Self.failure(held: last.failure, feed: feed, refreshFailure: refreshFailure)
+                return (failure, Self.state(feed: feed, filter: filter, isRefreshing: isRefreshing, failure: failure))
+            }
+            .map(\.state)
             .removeDuplicates()
             .sink { [weak self] state in self?.state = state }
             .store(in: &cancellables)
@@ -197,6 +207,14 @@ final class ProductListViewModel {
             return .failed(DisplayError(failure))
         }
         return feed == nil ? .loading : .empty
+    }
+
+    /// The failure the state reads: how the last refresh ended, except that a success over no feed keeps the
+    /// failure `held` until the feed it downloaded arrives through the stream. Internal, like `state`, so a test can
+    /// pin the order in which the two tasks deliver.
+    static func failure(held: FeedError?, feed: Feed?, refreshFailure: FeedError?) -> FeedError? {
+        guard refreshFailure == nil, feed == nil else { return refreshFailure }
+        return held
     }
 
     /// The menu's lines (`ProductFilter.menuLines`) that have a product under `category`, in the menu's order.
