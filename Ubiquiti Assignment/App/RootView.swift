@@ -25,10 +25,9 @@ struct RootView: View {
     @ViewBuilder
     private func destination(for route: Route) -> some View {
         switch route {
-        case let .product(id):
+        case let .product(product):
             ProductDetailView(viewModel: ProductDetailViewModel(
-                productID: id,
-                repository: dependencies.feedRepository,
+                product: product,
                 imageLoader: dependencies.imageLoader,
             ))
         }

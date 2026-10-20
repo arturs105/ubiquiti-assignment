@@ -25,7 +25,3 @@ struct LoadingView: View {
 #Preview("Products") {
     LoadingView()
 }
-
-#Preview("Custom title") {
-    LoadingView(title: "Fetching details")
-}

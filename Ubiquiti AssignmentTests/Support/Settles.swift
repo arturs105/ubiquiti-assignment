@@ -9,12 +9,6 @@ func settles(_ viewModel: ProductListViewModel, at expected: LoadState<[Product]
     await settles(viewModel) { $0.state == expected }
 }
 
-/// `settles(_:at:)` for the details view model, whose state holds one product.
-@MainActor
-func settles(_ viewModel: ProductDetailViewModel, at expected: LoadState<Product>) async -> Bool {
-    await settles(viewModel) { $0.state == expected }
-}
-
 /// Whether the view model comes to satisfy `condition`. For an end state that spans more than `state`: the feed
 /// task and the refresh task each send into their own subject, in an order the scheduler picks, so a state can land
 /// before or after `isRefreshing` clears.
@@ -32,10 +26,4 @@ func settles<ViewModel: AnyObject>(
         return true
     }
     return false
-}
-
-enum Settling {
-    /// The pause between two checks of a value the view model does not expose for observation: short enough to
-    /// add nothing noticeable to a test, long enough to leave the main thread idle between checks.
-    static let interval: Duration = .milliseconds(10)
 }

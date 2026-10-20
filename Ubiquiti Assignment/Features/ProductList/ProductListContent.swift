@@ -43,7 +43,7 @@ struct ProductListContent: View {
 
     var body: some View {
         List(products) { product in
-            NavigationLink(value: Route.product(product.id)) {
+            NavigationLink(value: Route.product(product)) {
                 ProductRow(product: product, thumbnail: thumbnail(product))
             }
             .insetGroupedRow()

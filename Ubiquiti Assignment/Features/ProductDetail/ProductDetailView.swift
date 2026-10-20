@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// The product details: one product looked up by id in the feed, with loading, empty and error states of its own.
+/// The product details: the product carried on the route, its name as the title and its hero image above the rows.
 ///
-/// Switches over the view model's state so each state gets its dedicated view. The product is read from the
-/// repository's stream rather than carried from the list, so a refresh while the screen is open updates it; see
-/// `docs/DECISIONS.md`, 2026-10-18 "Route by ID".
+/// The product arrives complete from the list, so the screen has no loading, empty or error state of its own;
+/// the hero slot shows a spinner until its image lands. See `docs/DECISIONS.md`, 2026-10-20 "Route by value".
 struct ProductDetailView: View {
     @State private var viewModel: ProductDetailViewModel
 
@@ -16,77 +15,25 @@ struct ProductDetailView: View {
     // MARK: - View
 
     var body: some View {
-        content
-            .navigationTitle(title)
+        ProductDetailContent(product: viewModel.product, hero: viewModel.hero)
+            .navigationTitle(viewModel.product.name)
             .toolbarTitleDisplayMode(.inline)
-            .task { viewModel.load() }
-    }
-
-    // MARK: - Private helpers
-
-    @ViewBuilder
-    private var content: some View {
-        switch viewModel.state {
-        case .loading:
-            LoadingView(title: "Fetching details")
-        case .empty:
-            EmptyStateView(
-                title: "Product not found",
-                message: "This product is no longer in the catalogue.",
-                systemImage: "shippingbox",
-            )
-        case let .failed(error):
-            ErrorView(error: error, retry: viewModel.retry)
-        case let .loaded(product):
-            ProductDetailContent(product: product, hero: viewModel.heroViewModel(for: product))
-        }
-    }
-
-    /// The product's name once there is one, so the back button on any screen pushed later names it.
-    private var title: Text {
-        if case let .loaded(product) = viewModel.state {
-            Text(product.name)
-        } else {
-            Text("Details")
-        }
     }
 }
 
 #Preview("Loaded") {
     NavigationStack {
         ProductDetailView(viewModel: ProductDetailViewModel(
-            productID: Product.previews[0].id,
-            repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged),
-            imageLoader: InMemoryImageLoader(),
+            product: Product.previews[0],
+            imageLoader: InMemoryImageLoader(image: .solid(.systemBlue, size: .hero)),
         ))
     }
 }
 
-#Preview("Not found") {
+#Preview("Image loading") {
     NavigationStack {
         ProductDetailView(viewModel: ProductDetailViewModel(
-            productID: UUID(),
-            repository: InMemoryFeedRepository(cached: .preview, refresh: .unchanged),
-            imageLoader: InMemoryImageLoader(),
-        ))
-    }
-}
-
-#Preview("Error") {
-    NavigationStack {
-        ProductDetailView(viewModel: ProductDetailViewModel(
-            productID: UUID(),
-            repository: InMemoryFeedRepository(error: .network(.httpStatus(503))),
-            imageLoader: InMemoryImageLoader(),
-        ))
-    }
-}
-
-#Preview("Loading") {
-    NavigationStack {
-        ProductDetailView(viewModel: ProductDetailViewModel(
-            productID: UUID(),
-            repository: InMemoryFeedRepository.neverAnswering(),
+            product: Product.previews[0],
             imageLoader: InMemoryImageLoader.pending,
         ))
     }
