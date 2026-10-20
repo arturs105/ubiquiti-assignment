@@ -62,8 +62,8 @@ struct ProductListView: View {
                 }
             }
             if let error = viewModel.staleError {
-                // The banner shows its spinner in place of Retry while `isLoading`, so Retry needs no gating here.
-                StaleDataBanner(error: error, isLoading: viewModel.isRefreshing, retry: viewModel.retry)
+                // The banner shows its spinner in place of Retry while `isRetrying`, so Retry needs no gating here.
+                StaleDataBanner(error: error, isRetrying: viewModel.isRefreshing, retry: viewModel.retry)
             }
         }
         .padding(.horizontal, Spacing.large)

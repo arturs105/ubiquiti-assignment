@@ -6,16 +6,16 @@ import SwiftUI
 /// names the failure (its symbol and headline), so an offline refresh and a server error read differently.
 struct StaleDataBanner: View {
     private let error: DisplayError
-    private let isLoading: Bool
-    private let retry: (() -> Void)?
+    private let isRetrying: Bool
+    private let retry: () -> Void
 
     /// - Parameters:
     ///   - error: Why the refresh failed, as the user reads it.
-    ///   - isLoading: Whether a refresh is in flight; a spinner then replaces Retry.
-    ///   - retry: Runs when the user taps Retry. Pass `nil` for a banner with no action.
-    init(error: DisplayError, isLoading: Bool = false, retry: (() -> Void)? = nil) {
+    ///   - isRetrying: Whether a retry is in flight; a spinner then replaces Retry.
+    ///   - retry: Runs when the user taps Retry.
+    init(error: DisplayError, isRetrying: Bool = false, retry: @escaping () -> Void) {
         self.error = error
-        self.isLoading = isLoading
+        self.isRetrying = isRetrying
         self.retry = retry
     }
 
@@ -49,14 +49,14 @@ struct StaleDataBanner: View {
 
     @ViewBuilder
     var accessoryView: some View {
-        if isLoading {
+        if isRetrying {
             ProgressView()
-        } else if let retry {
-            retryButton(retry)
+        } else {
+            retryButton
         }
     }
 
-    func retryButton(_ retry: @escaping () -> Void) -> some View {
+    var retryButton: some View {
         Button(action: retry) {
             // The frame sits inside the label because a borderless button only takes taps on its label.
             Text("Retry")
@@ -81,7 +81,7 @@ struct StaleDataBanner: View {
 }
 
 #Preview("Refreshing") {
-    StaleDataBanner(error: .offline, isLoading: true)
+    StaleDataBanner(error: .offline, isRetrying: true) {}
         .padding(Spacing.large)
         .background(.backgroundSecondary)
 }
