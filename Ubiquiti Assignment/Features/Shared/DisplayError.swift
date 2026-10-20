@@ -43,7 +43,8 @@ nonisolated struct DisplayError: Equatable, Sendable {
         systemImage: "doc.questionmark",
     )
 
-    /// The image arrived, or sat in the cache, but no picture could be made of it.
+    /// The image server refused the request with an error status, or the image arrived, or sat in the cache, but no
+    /// picture could be made of it.
     static let unavailableImage = DisplayError(
         title: "Image unavailable",
         message: "The image couldn’t be shown.",

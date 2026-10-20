@@ -26,7 +26,7 @@ struct ProductImageViewModelTests {
 
         await viewModel.load()
 
-        #expect(viewModel.state == .failed(.serverUnavailable))
+        #expect(viewModel.state == .failed(.unavailableImage))
     }
 
     @Test func cancellingTheLoadKeepsThePlaceholder() async {

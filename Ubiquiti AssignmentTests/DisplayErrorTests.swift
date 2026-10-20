@@ -45,10 +45,19 @@ struct DisplayErrorTests {
         #expect(DisplayError(FeedError.network(offline)) == DisplayError(offline))
     }
 
-    @Test func anImageNetworkFailureReadsLikeTheNetworkError() {
-        let forbidden = NetworkError.httpStatus(HTTPStatus.forbidden)
+    @Test func anImageTransportFailureReadsLikeTheNetworkError() {
+        let offline = NetworkError.network(URLError(.notConnectedToInternet))
 
-        #expect(DisplayError(ImageError.network(forbidden)) == DisplayError(forbidden))
+        #expect(DisplayError(ImageError.network(offline)) == DisplayError(offline))
+    }
+
+    @Test(arguments: [HTTPStatus.forbidden, 404, 503])
+    func anImageErrorStatusReadsAsTheImageUnavailable(status: Int) {
+        #expect(DisplayError(ImageError.network(.httpStatus(status))) == .unavailableImage)
+    }
+
+    @Test func aNonHTTPImageResponseReadsAsServerUnavailable() {
+        #expect(DisplayError(ImageError.network(.invalidResponse)) == .serverUnavailable)
     }
 
     @Test func undecodableImageBytesReadAsUnavailable() {
