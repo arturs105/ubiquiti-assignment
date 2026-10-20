@@ -2,21 +2,19 @@ import SwiftUI
 
 /// Inline notice shown above a list that is rendering a cached snapshot because the refresh failed.
 ///
-/// Non-blocking by design: the cached content stays on screen and the banner carries the Retry instead.
+/// Non-blocking by design: the cached content stays on screen and the banner carries the Retry instead. The banner
+/// names the failure (its symbol and headline), so an offline refresh and a server error read differently.
 struct StaleDataBanner: View {
-    private let message: LocalizedStringResource
+    private let error: DisplayError
     private let isLoading: Bool
     private let retry: (() -> Void)?
 
     /// - Parameters:
-    ///   - message: What is stale and why, in one line.
-    ///   - retry: Runs when the user taps Retry. Pass `nil` while a refresh is already in flight.
-    init(
-        message: LocalizedStringResource = "Showing saved products. Couldn’t refresh.",
-        isLoading: Bool = false,
-        retry: (() -> Void)? = nil,
-    ) {
-        self.message = message
+    ///   - error: Why the refresh failed, as the user reads it.
+    ///   - isLoading: Whether a refresh is in flight; a spinner then replaces Retry.
+    ///   - retry: Runs when the user taps Retry. Pass `nil` for a banner with no action.
+    init(error: DisplayError, isLoading: Bool = false, retry: (() -> Void)? = nil) {
+        self.error = error
         self.isLoading = isLoading
         self.retry = retry
     }
@@ -35,10 +33,10 @@ struct StaleDataBanner: View {
 
     var label: some View {
         HStack(spacing: Spacing.small) {
-            Image(systemName: "wifi.slash")
+            Image(systemName: error.systemImage)
                 .foregroundStyle(.foregroundTertiary)
                 .accessibilityHidden(true)
-            Text(message)
+            Text("Showing saved products. \(Text(error.title))")
                 .textStyle(.caption)
                 .foregroundStyle(.foregroundSecondary)
         }
@@ -70,14 +68,20 @@ struct StaleDataBanner: View {
     }
 }
 
-#Preview("With retry") {
-    StaleDataBanner {}
+#Preview("Offline") {
+    StaleDataBanner(error: .offline) {}
+        .padding(Spacing.large)
+        .background(.backgroundSecondary)
+}
+
+#Preview("Server") {
+    StaleDataBanner(error: .serverUnavailable) {}
         .padding(Spacing.large)
         .background(.backgroundSecondary)
 }
 
 #Preview("Refreshing") {
-    StaleDataBanner(isLoading: true)
+    StaleDataBanner(error: .offline, isLoading: true)
         .padding(Spacing.large)
         .background(.backgroundSecondary)
 }

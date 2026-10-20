@@ -5,8 +5,9 @@ import SwiftUI
 ///
 /// Switches over the view model's state so loading, empty and error each get their dedicated view. The tab bar and
 /// the line filter button sit above the list and the empty state, the two states a feed can produce, and not above
-/// loading or error, where there is nothing to filter. A list that is on screen while a refresh fails stays on screen
-/// with the stale banner above it; the view never decides what is stale, it only renders what the view model derived.
+/// loading or error, where there is nothing to filter. A feed that is on screen while a refresh fails stays on screen
+/// with the stale banner under the tab bar, whether the tab has rows or is empty; the view never decides what is
+/// stale, it only renders what the view model derived.
 struct ProductListView: View {
     @State private var viewModel: ProductListViewModel
 
@@ -37,31 +38,32 @@ struct ProductListView: View {
             }
             .background(.backgroundSecondary)
             .refreshable(action: viewModel.refresh)
-            .safeAreaBar(edge: .top) { tabBar }
+            .safeAreaBar(edge: .top) { topBar }
         case let .failed(error):
-            ErrorView(error: error, retry: viewModel.retry)
+            ErrorView(error: error, isRetrying: viewModel.isRefreshing, retry: viewModel.retry)
         case let .loaded(products):
-            ProductListContent(
-                products: products,
-                thumbnail: viewModel.thumbnailViewModel,
-                isStale: viewModel.staleError != nil,
-                isRefreshing: viewModel.isRefreshing,
-                refresh: viewModel.refresh,
-                retry: viewModel.retry,
-            )
-            .safeAreaBar(edge: .top) { tabBar }
+            ProductListContent(products: products, thumbnail: viewModel.thumbnailViewModel, refresh: viewModel.refresh)
+                .safeAreaBar(edge: .top) { topBar }
         }
     }
 
-    /// Figma's "Tab Bar Container": the tabs stretching, the filter button fixed beside them, 8pt apart.
+    /// Figma's "Tab Bar Container", the tabs stretching and the filter button fixed beside them 8pt apart, with the
+    /// stale banner under it while the refresh behind the feed on screen has failed.
     ///
     /// Pinned with `safeAreaBar`, not `safeAreaInset`, so the system draws its soft scroll-edge blur under the bar
     /// once rows scroll beneath it, the treatment a navigation bar gets; at rest the bar sits on the plain background.
-    private var tabBar: some View {
-        HStack(spacing: Spacing.small) {
-            CategoryTabBar(selection: viewModel.selectedCategory) { viewModel.select(category: $0) }
-            LineFilterMenu(lines: viewModel.availableLines, selection: viewModel.selectedLines) {
-                viewModel.toggle(line: $0)
+    /// The banner lives here and not in the list so an empty tab reports the failed refresh too.
+    private var topBar: some View {
+        VStack(spacing: Spacing.small) {
+            HStack(spacing: Spacing.small) {
+                CategoryTabBar(selection: viewModel.selectedCategory) { viewModel.select(category: $0) }
+                LineFilterMenu(lines: viewModel.availableLines, selection: viewModel.selectedLines) {
+                    viewModel.toggle(line: $0)
+                }
+            }
+            if let error = viewModel.staleError {
+                // The banner shows its spinner in place of Retry while `isLoading`, so Retry needs no gating here.
+                StaleDataBanner(error: error, isLoading: viewModel.isRefreshing, retry: viewModel.retry)
             }
         }
         .padding(.horizontal, Spacing.large)
@@ -142,10 +144,42 @@ struct ProductListView: View {
     }
 }
 
-#Preview("Error") {
+#Preview("Stale, empty tab") {
+    NavigationStack {
+        let viewModel = ProductListViewModel(
+            repository: InMemoryFeedRepository(
+                cached: Feed(version: "network", products: [Product.previews[1]]),
+                error: .network(.httpStatus(503)),
+            ),
+            imageLoader: InMemoryImageLoader(),
+        )
+        ProductListView(viewModel: viewModel)
+            .task { viewModel.select(category: .cameras) }
+    }
+}
+
+#Preview("Error, offline") {
+    NavigationStack {
+        ProductListView(viewModel: ProductListViewModel(
+            repository: InMemoryFeedRepository(error: .network(.network(URLError(.notConnectedToInternet)))),
+            imageLoader: InMemoryImageLoader(),
+        ))
+    }
+}
+
+#Preview("Error, server") {
     NavigationStack {
         ProductListView(viewModel: ProductListViewModel(
             repository: InMemoryFeedRepository(error: .network(.httpStatus(503))),
+            imageLoader: InMemoryImageLoader(),
+        ))
+    }
+}
+
+#Preview("Error, unreadable feed") {
+    NavigationStack {
+        ProductListView(viewModel: ProductListViewModel(
+            repository: InMemoryFeedRepository(error: .decoding("keyNotFound(version)")),
             imageLoader: InMemoryImageLoader(),
         ))
     }

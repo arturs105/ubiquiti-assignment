@@ -25,9 +25,9 @@ final class ProductListViewModel {
     private(set) var availableLines: [Line] = []
     /// The feed on screen has no products at all, so an `empty` state is the catalogue's, not the tab's.
     private(set) var isCatalogueEmpty = false
-    /// Why the list on screen is stale: the refresh behind it failed. `nil` while the list has no rows, since the
-    /// failure is then the state itself.
-    private(set) var staleError: FeedError?
+    /// Why the list on screen is stale, as the user reads it: the refresh behind it failed. `nil` while the feed has
+    /// no rows, since the failure is then the state itself.
+    private(set) var staleError: DisplayError?
     /// A refresh is in flight; the stale banner shows a spinner in place of Retry.
     private(set) var isRefreshing = false
 
@@ -83,7 +83,7 @@ final class ProductListViewModel {
             .store(in: &cancellables)
 
         Publishers.CombineLatest(feedSubject, refreshFailureSubject)
-            .map { feed, failure in (feed?.products.isEmpty ?? true) ? nil : failure }
+            .map { feed, failure in (feed?.products.isEmpty ?? true) ? nil : failure.map(DisplayError.init) }
             .removeDuplicates()
             .sink { [weak self] error in self?.staleError = error }
             .store(in: &cancellables)
@@ -190,10 +190,11 @@ final class ProductListViewModel {
         // Rows exist, just none under this tab or these lines: the user widens the filter, and a failed refresh has
         // nothing to add.
         guard catalogue.isEmpty else { return .empty }
-        // No rows to keep on screen, cached or not: the failure is the state until a retry is under way, which
-        // reads as loading again. An empty list over a failed refresh would claim the catalogue is empty.
+        // No rows to keep on screen, cached or not: the failure is the state, through a retry too, so the error view
+        // shows the retry in place instead of giving way to the loading view and coming back on a second failure.
+        // An empty list over a failed refresh would claim the catalogue is empty.
         if let failure {
-            return isRefreshing ? .loading : .failed(failure)
+            return .failed(DisplayError(failure))
         }
         return feed == nil ? .loading : .empty
     }

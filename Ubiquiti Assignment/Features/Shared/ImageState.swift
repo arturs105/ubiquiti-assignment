@@ -2,12 +2,13 @@ import UIKit
 
 /// What a product image slot shows, as one value the view switches over exhaustively.
 ///
-/// Separate from `LoadState`: an image has no `empty`, and its failure carries no error, because every failure shows
-/// the same failure image (see `docs/DECISIONS.md`, 2026-10-18 "Thumbnails load through a per-row view model").
+/// Separate from `LoadState`: an image has no `empty`. The failure carries the error as the user reads it, so the
+/// hero can say why and offer a retry; a thumbnail ignores it and shows the failure image. See `docs/DECISIONS.md`,
+/// 2026-10-20 "The hero names its failure and retries in place".
 enum ImageState: Equatable {
     /// The image has not arrived yet; the slot shows a placeholder.
     case loading
     case loaded(UIImage)
-    /// The image could not be loaded; the slot shows the failure image until the row reappears.
-    case failed
+    /// The image could not be loaded.
+    case failed(DisplayError)
 }

@@ -48,7 +48,7 @@ struct ProductListViewModelTests {
         await viewModel.refresh()
 
         #expect(await settles(viewModel, at: .loaded(Product.previews)))
-        #expect(viewModel.staleError == offline)
+        #expect(viewModel.staleError == .offline)
         #expect(viewModel.isRefreshing == false)
     }
 
@@ -58,7 +58,7 @@ struct ProductListViewModelTests {
         viewModel.load()
         await viewModel.refresh()
 
-        #expect(await settles(viewModel, at: .failed(offline)))
+        #expect(await settles(viewModel, at: .failed(.offline)))
         #expect(viewModel.staleError == nil)
     }
 
@@ -117,7 +117,7 @@ struct ProductListViewModelTests {
             failure: offline,
         )
 
-        #expect(state == .failed(offline))
+        #expect(state == .failed(.offline))
     }
 
     @Test func anUpdateNobodyOnScreenAskedForReplacesTheList() async {
@@ -133,18 +133,61 @@ struct ProductListViewModelTests {
         #expect(await settles(viewModel, at: .loaded([Product.previews[0]])))
     }
 
-    @Test func aRetryFromTheErrorStateReadsAsLoadingUntilItFails() async {
+    @Test func aRetryFromTheErrorStateKeepsTheErrorOnScreenWhileItRuns() async {
+        // The error view shows the retry on its button; swapping to the loading view and back would flicker.
         let viewModel = makeViewModel(repository: InMemoryFeedRepository(error: offline))
         viewModel.load()
         await viewModel.refresh()
-        #expect(await settles(viewModel, at: .failed(offline)))
+        #expect(await settles(viewModel, at: .failed(.offline)))
 
         viewModel.retry()
 
-        #expect(viewModel.state == .loading)
+        #expect(viewModel.state == .failed(.offline))
         #expect(viewModel.isRefreshing)
-        #expect(await settles(viewModel, at: .failed(offline)))
-        #expect(viewModel.isRefreshing == false)
+        #expect(await settles(viewModel) { $0.state == .failed(.offline) && !$0.isRefreshing })
+    }
+
+    @Test func aRetryFromTheErrorStateThatSucceedsLoadsTheList() async {
+        let repository = InMemoryFeedRepository.neverAnswering()
+        let viewModel = makeViewModel(repository: repository)
+        viewModel.load()
+
+        await repository.publish(.preview)
+
+        #expect(await settles(viewModel, at: .loaded(Product.previews)))
+    }
+
+    @Test func aFailedRefreshOverAnEmptyTabIsReportedAsStale() async {
+        // The rows are under another tab, so the state is `empty`, but the banner must still say the refresh failed.
+        let networkOnly = Feed(version: "network", products: [Product.previews[1]])
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(cached: networkOnly, error: offline))
+        viewModel.select(category: .cameras)
+
+        viewModel.load()
+        await viewModel.refresh()
+
+        #expect(await settles(viewModel, at: .empty))
+        #expect(viewModel.staleError == .offline)
+    }
+
+    @Test func aServerErrorBehindTheCachedFeedIsWordedAsTheServers() async {
+        let repository = InMemoryFeedRepository(cached: .preview, error: .network(.httpStatus(503)))
+        let viewModel = makeViewModel(repository: repository)
+
+        viewModel.load()
+        await viewModel.refresh()
+
+        #expect(await settles(viewModel, at: .loaded(Product.previews)))
+        #expect(viewModel.staleError == .serverUnavailable)
+    }
+
+    @Test func anUnreadableFeedWithNothingCachedFailsAsUnreadable() async {
+        let viewModel = makeViewModel(repository: InMemoryFeedRepository(error: .decoding("keyNotFound(version)")))
+
+        viewModel.load()
+        await viewModel.refresh()
+
+        #expect(await settles(viewModel, at: .failed(.unreadableFeed)))
     }
 
     @Test func aPullWhileARefreshIsInFlightJoinsIt() async {

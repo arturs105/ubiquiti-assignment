@@ -3,8 +3,9 @@ import SwiftUI
 /// The product image at the top of the details screen: one block of the inset-grouped list, the image centred in
 /// it at a fixed height so the rows below do not move when it arrives.
 ///
-/// Decorative: the navigation title already names the product, and the slot's own spinner and failure image say
-/// the rest without words (see `docs/DECISIONS.md`, 2026-10-19 "The details hero").
+/// Decorative while loading or loaded: the navigation title already names the product. A failed image names its
+/// failure and offers Retry in the block (see `docs/DECISIONS.md`, 2026-10-19 "The details hero" and 2026-10-20
+/// "The hero names its failure and retries in place").
 struct ProductDetailHero: View {
     private let viewModel: ProductImageViewModel
 
@@ -16,7 +17,7 @@ struct ProductDetailHero: View {
     // MARK: - View
 
     var body: some View {
-        ProductImageView(viewModel: viewModel)
+        ProductImageView(viewModel: viewModel, failureStyle: .detailed)
             .padding(Spacing.large)
             .frame(maxWidth: .infinity)
             .frame(height: Metrics.heroHeight)
@@ -49,6 +50,16 @@ struct ProductDetailHero: View {
             product: Product.previews[0],
             size: .hero,
             loader: InMemoryImageLoader(error: .network(.httpStatus(HTTPStatus.forbidden))),
+        ))
+    }
+}
+
+#Preview("Failed, offline") {
+    List {
+        ProductDetailHero(viewModel: ProductImageViewModel(
+            product: Product.previews[0],
+            size: .hero,
+            loader: InMemoryImageLoader(error: .network(.network(URLError(.notConnectedToInternet)))),
         ))
     }
 }
