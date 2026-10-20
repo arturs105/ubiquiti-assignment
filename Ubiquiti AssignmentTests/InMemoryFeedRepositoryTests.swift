@@ -65,6 +65,16 @@ struct InMemoryFeedRepositoryTests {
         #expect(await feeds.collect() == [feed])
     }
 
+    @Test func aScriptedOutcomeEndsTheRefreshesAfterIt() async {
+        let repository = InMemoryFeedRepository(error: .decoding("bad"))
+        #expect(await repository.load() == FeedLoad(cached: nil, refresh: .failure(.decoding("bad"))))
+
+        await repository.script(.success(.updated(feed)))
+
+        #expect(await repository.load() == FeedLoad(cached: nil, refresh: .success(.updated(feed))))
+        #expect(await repository.feed().firstElement() == feed)
+    }
+
     @Test func aNeverAnsweringRefreshThrowsTheCancellationOnceItsTaskIsCancelled() async {
         let repository = InMemoryFeedRepository.neverAnswering(cached: feed)
         #expect(await repository.feed().firstElement() == feed)
