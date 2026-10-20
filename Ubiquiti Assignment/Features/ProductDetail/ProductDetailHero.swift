@@ -44,12 +44,32 @@ struct ProductDetailHero: View {
     }
 }
 
-#Preview("Failed") {
+#Preview("Failed, image unavailable") {
     List {
         ProductDetailHero(viewModel: ProductImageViewModel(
             product: Product.previews[0],
             size: .hero,
             loader: InMemoryImageLoader(error: .network(.httpStatus(HTTPStatus.forbidden))),
+        ))
+    }
+}
+
+#Preview("Failed, unreachable") {
+    List {
+        ProductDetailHero(viewModel: ProductImageViewModel(
+            product: Product.previews[0],
+            size: .hero,
+            loader: InMemoryImageLoader(error: .network(.network(URLError(.timedOut)))),
+        ))
+    }
+}
+
+#Preview("Failed, server") {
+    List {
+        ProductDetailHero(viewModel: ProductImageViewModel(
+            product: Product.previews[0],
+            size: .hero,
+            loader: InMemoryImageLoader(error: .network(.invalidResponse)),
         ))
     }
 }

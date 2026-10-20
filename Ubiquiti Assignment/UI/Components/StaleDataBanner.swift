@@ -74,8 +74,20 @@ struct StaleDataBanner: View {
         .background(.backgroundSecondary)
 }
 
+#Preview("Unreachable") {
+    StaleDataBanner(error: .unreachable) {}
+        .padding(Spacing.large)
+        .background(.backgroundSecondary)
+}
+
 #Preview("Server") {
     StaleDataBanner(error: .serverUnavailable) {}
+        .padding(Spacing.large)
+        .background(.backgroundSecondary)
+}
+
+#Preview("Unreadable feed") {
+    StaleDataBanner(error: .unreadableFeed) {}
         .padding(Spacing.large)
         .background(.backgroundSecondary)
 }
