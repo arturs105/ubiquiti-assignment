@@ -6,7 +6,7 @@ import Foundation
 /// never switches over transport codes or shows a description written for a log. The mappings live in the
 /// `DisplayError+<Error>` extensions and are the fixed values below, so a test can name the one it expects. Every
 /// failure the app can show is retryable, so there is no retry flag: the view that owns the retry action shows the
-/// button. See `docs/DECISIONS.md`, 2026-10-20 "`DisplayError`: four failures the user can act on".
+/// button. See `docs/DECISIONS.md`, 2026-10-20 "`DisplayError`: five failures the user can act on".
 nonisolated struct DisplayError: Equatable, Sendable {
     /// Short headline, such as "You’re offline".
     let title: LocalizedStringResource
