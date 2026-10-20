@@ -113,7 +113,6 @@ struct ProductListViewModelTests {
         let state = ProductListViewModel.state(
             feed: empty,
             filter: ProductFilter(category: .all),
-            isRefreshing: false,
             failure: offline,
         )
 
@@ -176,7 +175,6 @@ struct ProductListViewModelTests {
             return ProductListViewModel.state(
                 feed: feed,
                 filter: ProductFilter(category: .all),
-                isRefreshing: false,
                 failure: held,
             )
         }
@@ -297,7 +295,6 @@ struct ProductListViewModelTests {
         let state = ProductListViewModel.state(
             feed: networkOnly,
             filter: ProductFilter(category: .cameras),
-            isRefreshing: false,
             failure: offline,
         )
 

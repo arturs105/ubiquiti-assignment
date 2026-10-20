@@ -7,9 +7,10 @@ import Foundation
 /// Inputs enter as subjects: the feed the repository streams, the filter (the selected category and the checked
 /// lines, one `ProductFilter` so a tab change is one send), whether a refresh is in flight, and how the last refresh
 /// ended. The lines the menu offers derive from feed and category, the filter the list applies is the input filter
-/// narrowed to those lines, the screen state is a `CombineLatest` over the feed, that filter and the two refresh
-/// inputs, and the stale error over two of them, so no intent method computes a state by hand; see the Concurrency
-/// and Combine section of `docs/CODING_STANDARDS.md`. `init` only wires the pipeline; `load()` starts the
+/// narrowed to those lines, the screen state is a `CombineLatest` over the feed, that filter and how the last
+/// refresh ended, and the stale error over the feed and that outcome, so no intent method computes a state by hand;
+/// see the Concurrency and Combine section of `docs/CODING_STANDARDS.md`. Whether a refresh is in flight feeds only
+/// `isRefreshing`, which the views read beside the state. `init` only wires the pipeline; `load()` starts the
 /// subscription and the first refresh. The rows' thumbnails are built here too, so the views never see the image
 /// loader.
 @Observable
@@ -28,7 +29,7 @@ final class ProductListViewModel {
     /// Why the list on screen is stale, as the user reads it: the refresh behind it failed. `nil` while the feed has
     /// no rows, since the failure is then the state itself.
     private(set) var staleError: DisplayError?
-    /// A refresh is in flight; the stale banner shows a spinner in place of Retry.
+    /// A refresh is in flight; the stale banner and the error view show a spinner in place of Retry.
     private(set) var isRefreshing = false
 
     private let repository: any FeedRepository
@@ -61,11 +62,11 @@ final class ProductListViewModel {
         // error view through that gap instead of flashing the loading view. The hold is a `scan` over the same tuple
         // the state maps, not a publisher of its own beside it: a subject delivers to its subscribers in no fixed
         // order, so a second subscription to the feed could clear the failure before the state saw the feed.
-        Publishers.CombineLatest4(feed, filter, refreshingSubject, refreshFailureSubject)
+        Publishers.CombineLatest3(feed, filter, refreshFailureSubject)
             .scan((failure: FeedError?.none, state: LoadState<[Product]>.loading)) { last, input in
-                let (feed, filter, isRefreshing, refreshFailure) = input
+                let (feed, filter, refreshFailure) = input
                 let failure = Self.failure(held: last.failure, feed: feed, refreshFailure: refreshFailure)
-                return (failure, Self.state(feed: feed, filter: filter, isRefreshing: isRefreshing, failure: failure))
+                return (failure, Self.state(feed: feed, filter: filter, failure: failure))
             }
             .map(\.state)
             .removeDuplicates()
@@ -191,7 +192,6 @@ final class ProductListViewModel {
     static func state(
         feed: Feed?,
         filter: ProductFilter,
-        isRefreshing: Bool,
         failure: FeedError?,
     ) -> LoadState<[Product]> {
         let catalogue = feed?.products ?? []
