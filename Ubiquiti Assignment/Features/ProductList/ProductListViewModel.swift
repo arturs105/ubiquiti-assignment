@@ -42,9 +42,6 @@ final class ProductListViewModel {
     @ObservationIgnored private var feedTask: Task<Void, Never>?
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
 
-    /// - Parameters:
-    ///   - repository: The feed seam the list reads and refreshes through.
-    ///   - imageLoader: The image seam the rows' thumbnails load through.
     init(repository: any FeedRepository, imageLoader: any ImageLoader) {
         self.repository = repository
         self.imageLoader = imageLoader
@@ -155,7 +152,6 @@ final class ProductListViewModel {
 
     // MARK: - Private helpers
 
-    /// The refresh in flight, or a new one when none is.
     @discardableResult
     private func startRefresh() -> Task<Void, Never> {
         if let refreshTask {

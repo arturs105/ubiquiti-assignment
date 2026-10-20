@@ -8,12 +8,10 @@ nonisolated struct InMemoryFeedClient: FeedClient {
         self.result = result
     }
 
-    /// A client whose every fetch succeeds with `response`.
     init(response: FeedResponse) {
         self.init(result: .success(response))
     }
 
-    /// A client whose every fetch fails with `error`.
     init(error: NetworkError) {
         self.init(result: .failure(error))
     }

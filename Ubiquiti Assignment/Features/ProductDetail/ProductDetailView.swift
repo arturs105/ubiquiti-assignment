@@ -1,37 +1,40 @@
 import SwiftUI
 
-/// Placeholder for the product details: shows the id the route carried.
+/// The product details: the product carried on the route, its name as the title and its hero image above the rows.
 ///
-/// Exists so the shell's navigation runs end to end. The real screen subscribes to the repository's feed through its
-/// view model and looks the product up by this id.
+/// The product arrives complete from the list, so the screen has no loading, empty or error state of its own;
+/// the hero slot shows a spinner until its image lands. See `docs/DECISIONS.md`, 2026-10-20 "Route by value".
 struct ProductDetailView: View {
-    private let productID: Product.ID
+    @State private var viewModel: ProductDetailViewModel
 
-    /// - Parameter productID: the product the route asked for.
-    init(productID: Product.ID) {
-        self.productID = productID
+    /// - Parameter viewModel: built by whoever owns the navigation stack; the view keeps it for its lifetime.
+    init(viewModel: ProductDetailViewModel) {
+        _viewModel = State(wrappedValue: viewModel)
     }
 
     // MARK: - View
 
     var body: some View {
-        VStack(spacing: Spacing.small) {
-            Text("Product details")
-                .textStyle(.bodyBold)
-                .foregroundStyle(.foregroundPrimary)
-            Text(verbatim: productID.uuidString)
-                .textStyle(.caption)
-                .foregroundStyle(.foregroundSecondary)
-        }
-        .padding(Spacing.large)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.backgroundSecondary)
-        .navigationTitle("Details")
+        ProductDetailContent(product: viewModel.product, hero: viewModel.hero)
+            .navigationTitle(viewModel.product.name)
+            .toolbarTitleDisplayMode(.inline)
     }
 }
 
-#Preview {
+#Preview("Loaded") {
     NavigationStack {
-        ProductDetailView(productID: UUID())
+        ProductDetailView(viewModel: ProductDetailViewModel(
+            product: Product.previews[0],
+            imageLoader: InMemoryImageLoader(image: .solid(.systemBlue, size: .hero)),
+        ))
+    }
+}
+
+#Preview("Image loading") {
+    NavigationStack {
+        ProductDetailView(viewModel: ProductDetailViewModel(
+            product: Product.previews[0],
+            imageLoader: InMemoryImageLoader.pending,
+        ))
     }
 }

@@ -13,16 +13,15 @@ final nonisolated class StubURLProtocol: URLProtocol {
         case failure(URLError)
         /// Never answers, so a test can cancel the task that waits on it.
         case hang
-        /// Answers like `http` once `release(_:)` is called for the URL, so a test can start several callers
-        /// against one request before it completes.
-        case held(status: Int, body: Data = Data())
+        /// Answers like `http` once `delay` has passed, so a test can start several callers against one request
+        /// before it completes. The stub keeps the time itself, on the loading thread: an answer that waited on the
+        /// test's own task would miss the downloader's timeout whenever the main actor stalls (see
+        /// `docs/DECISIONS.md`, 2026-10-19).
+        case delayed(status: Int, body: Data = Data(), delay: TimeInterval)
     }
 
     private static let scripts = Mutex<[URL: Script]>([:])
     private static let requests = Mutex<[URL: [URLRequest]]>([:])
-    private static let released = Mutex<Set<URL>>([])
-    /// How often a held request checks whether it was released, in seconds.
-    private static let releasePollInterval: TimeInterval = 0.01
 
     /// The production feed configuration with every request routed through the stub.
     static func session() -> URLSession {
@@ -43,19 +42,12 @@ final nonisolated class StubURLProtocol: URLProtocol {
         scripts.withLock { $0[url] = script }
     }
 
-    /// The last request the stub received for `url`, if any.
     static func request(for url: URL) -> URLRequest? {
         requests.withLock { $0[url]?.last }
     }
 
-    /// How many requests the stub received for `url`.
     static func requestCount(for url: URL) -> Int {
         requests.withLock { $0[url]?.count ?? 0 }
-    }
-
-    /// Lets every `held` request for `url` answer.
-    static func release(_ url: URL) {
-        _ = released.withLock { $0.insert(url) }
     }
 
     // MARK: - URLProtocol
@@ -82,8 +74,8 @@ final nonisolated class StubURLProtocol: URLProtocol {
             client.urlProtocol(self, didFailWithError: error)
         case .hang:
             break
-        case .held:
-            answerWhenReleased()
+        case let .delayed(_, _, delay):
+            perform(#selector(answerAfterDelay), with: nil, afterDelay: delay)
         }
     }
 
@@ -93,15 +85,12 @@ final nonisolated class StubURLProtocol: URLProtocol {
 
     // MARK: - Private helpers
 
-    /// Checks on the loading thread's run loop, where `URLProtocol` expects its client to be called, until the
-    /// test releases the URL; a cancelled request stops the checks in `stopLoading()`.
-    @objc private func answerWhenReleased() {
-        guard let client, let url = request.url, case let .held(status, body) = Self.scripts.withLock({ $0[url] })
+    /// Runs on the loading thread's run loop, where `URLProtocol` expects its client to be called, once the
+    /// scripted delay has passed; a cancelled request drops the pending call in `stopLoading()`.
+    @objc private func answerAfterDelay() {
+        guard let client, let url = request.url,
+              case let .delayed(status, body, _) = Self.scripts.withLock({ $0[url] })
         else { return }
-        guard Self.released.withLock({ $0.contains(url) }) else {
-            perform(#selector(answerWhenReleased), with: nil, afterDelay: Self.releasePollInterval)
-            return
-        }
         answer(status: status, headers: [:], body: body, url: url, client: client)
     }
 

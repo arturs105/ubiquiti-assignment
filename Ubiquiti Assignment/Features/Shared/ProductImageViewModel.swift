@@ -8,17 +8,12 @@ import UIKit
 /// view model".
 @Observable
 final class ProductImageViewModel {
-    /// What the slot shows.
     private(set) var state: ImageState = .loading
 
     private let product: Product
     private let size: ImageSize
     private let loader: any ImageLoader
 
-    /// - Parameters:
-    ///   - product: Whose image to show.
-    ///   - size: Which rendition the slot needs.
-    ///   - loader: The image seam the slot loads through.
     init(product: Product, size: ImageSize, loader: any ImageLoader) {
         self.product = product
         self.size = size

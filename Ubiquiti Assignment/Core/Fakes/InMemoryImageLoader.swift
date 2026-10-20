@@ -18,7 +18,6 @@ final nonisolated class InMemoryImageLoader: ImageLoader, Sendable {
     private let overrides: [Product.ID: Result<UIImage, ImageError>]
     private let recorded = Mutex<[Request]>([])
 
-    /// A loader answering `answer` for every product except those in `overrides`.
     init(answer: Result<UIImage, ImageError>?, overrides: [Product.ID: Result<UIImage, ImageError>] = [:]) {
         self.answer = answer
         self.overrides = overrides
@@ -29,7 +28,6 @@ final nonisolated class InMemoryImageLoader: ImageLoader, Sendable {
         self.init(answer: .success(image))
     }
 
-    /// A loader failing every product with `error`.
     convenience init(error: ImageError) {
         self.init(answer: .failure(error))
     }

@@ -125,17 +125,13 @@ final class KingfisherImageLoaderTests {
     @Test func concurrentLoadsOfTheSameImageShareOneDownload() async throws {
         let product = try Product.stub()
         let url = product.imageURL(size: .thumbnail)
-        StubURLProtocol.script(.held(status: 200, body: png), at: url)
+        // No hook shows the second call joining the first download, so the stub holds the answer long enough for
+        // the second call to issue a request of its own; a second download would show up in the count.
+        StubURLProtocol.script(.delayed(status: 200, body: png, delay: Constants.joinGracePeriod), at: url)
         let loader = try loader()
 
         async let first = loader.image(for: product, size: .thumbnail)
         async let second = loader.image(for: product, size: .thumbnail)
-        try await waitForRequest(to: url)
-        // No hook shows the second call joining the first download, so give it time to issue a request of its
-        // own before the held one answers; a second download would show up in the count.
-        try await Task.sleep(for: Constants.joinGracePeriod)
-        StubURLProtocol.release(url)
-        // Both callers get the image, from the one request.
         _ = try await (first, second)
 
         #expect(StubURLProtocol.requestCount(for: url) == 1)
@@ -181,6 +177,7 @@ final class KingfisherImageLoaderTests {
 extension KingfisherImageLoaderTests {
     nonisolated enum Constants {
         static let pollInterval = Duration.milliseconds(20)
-        static let joinGracePeriod = Duration.milliseconds(200)
+        /// How long the shared download is held, in seconds.
+        static let joinGracePeriod: TimeInterval = 0.2
     }
 }

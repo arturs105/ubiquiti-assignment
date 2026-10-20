@@ -7,7 +7,6 @@ import UIKit
 enum ImageState: Equatable {
     /// The image has not arrived yet; the slot shows a placeholder.
     case loading
-    /// The image, ready to draw.
     case loaded(UIImage)
     /// The image could not be loaded; the slot shows the failure image until the row reappears.
     case failed
