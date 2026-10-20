@@ -16,6 +16,7 @@ import Foundation
 final class ProductListViewModel {
     /// What the screen shows: the products under the selected tab.
     private(set) var state: LoadState<[Product]> = .loading
+    /// The tab the list is filtered by.
     private(set) var selectedCategory: ProductCategory = .all
     /// The lines checked in the filter menu, among those it offers; empty means every line under the tab.
     private(set) var selectedLines: Set<Line.ID> = []

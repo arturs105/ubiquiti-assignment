@@ -12,7 +12,9 @@ struct CategoryTabBar: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var pill
 
-    /// - Parameter select: Runs with the tapped tab; the owner feeds it to the view model.
+    /// - Parameters:
+    ///   - selection: The tab the list is filtered by.
+    ///   - select: Runs with the tapped tab; the owner feeds it to the view model.
     init(selection: ProductCategory, select: @escaping (ProductCategory) -> Void) {
         self.selection = selection
         self.select = select

@@ -17,6 +17,7 @@ struct LineFilterMenu: View {
 
     /// - Parameters:
     ///   - lines: The lines the menu offers, in the order they are listed.
+    ///   - selection: The lines currently checked.
     ///   - toggle: Runs with the tapped line; the owner flips it in the view model.
     init(lines: [Line], selection: Set<Line.ID>, toggle: @escaping (Line.ID) -> Void) {
         self.lines = lines

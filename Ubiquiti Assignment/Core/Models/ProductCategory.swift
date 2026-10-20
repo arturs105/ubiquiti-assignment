@@ -4,6 +4,7 @@ import Foundation
 /// plus the Protect products whose device type senses or actuates. The mapping is recorded in `docs/DECISIONS.md`,
 /// 2026-10-15 and 2026-10-19.
 nonisolated enum ProductCategory: CaseIterable, Hashable, Identifiable, Sendable {
+    /// Every product in the feed.
     case all
     /// Every product the feed reports as a camera, whatever its line.
     case cameras
