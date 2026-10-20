@@ -22,7 +22,7 @@ nonisolated struct DisplayError: Equatable, Sendable {
         systemImage: "wifi.slash",
     )
 
-    /// The request left the device but never got an answer: timeout, DNS, TLS, a dropped connection.
+    /// The request left the device but never got an answer: timeout, DNS, TLS, a connection dropped mid-request.
     static let unreachable = DisplayError(
         title: "Couldn’t reach the server",
         message: "The connection failed. Check your network and try again.",

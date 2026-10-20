@@ -5,7 +5,6 @@ import Testing
 struct DisplayErrorTests {
     @Test(arguments: [
         URLError.Code.notConnectedToInternet,
-        .networkConnectionLost,
         .dataNotAllowed,
         .internationalRoamingOff,
     ])
@@ -13,7 +12,13 @@ struct DisplayErrorTests {
         #expect(DisplayError(NetworkError.network(URLError(code))) == .offline)
     }
 
-    @Test(arguments: [URLError.Code.timedOut, .cannotFindHost, .secureConnectionFailed, .unknown])
+    @Test(arguments: [
+        URLError.Code.timedOut,
+        .networkConnectionLost,
+        .cannotFindHost,
+        .secureConnectionFailed,
+        .unknown
+    ])
     func anyOtherTransportFailureReadsAsUnreachable(code: URLError.Code) {
         #expect(DisplayError(NetworkError.network(URLError(code))) == .unreachable)
     }

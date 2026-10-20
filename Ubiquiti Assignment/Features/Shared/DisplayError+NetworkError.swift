@@ -17,10 +17,10 @@ extension DisplayError {
 
     private nonisolated enum Constants {
         /// The `URLError` codes that mean the device itself has no connection, as opposed to a connection that
-        /// failed on the way.
+        /// failed on the way. `networkConnectionLost` is the latter: a request cut mid-flight, often by a Wi-Fi to
+        /// cellular handoff, on a device that is usually online again by the time the user reads the message.
         static let offlineCodes: Set<URLError.Code> = [
             .notConnectedToInternet,
-            .networkConnectionLost,
             .dataNotAllowed,
             .internationalRoamingOff,
         ]
