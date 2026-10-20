@@ -1,18 +1,22 @@
 import SwiftUI
 
-/// Full-screen error state: a warning symbol, the error's own description and a Retry button.
+/// Full-screen error state: the error's symbol and headline, its message and a Retry button.
 ///
-/// The view does not interpret the error; whoever builds the `LocalizedError` owns the wording.
+/// The view does not interpret the error; the `DisplayError` mapping owns the wording. While a retry runs the state
+/// behind the view stays failed, so the button shows a spinner in place of its symbol instead of the screen
+/// swapping to the loading view and back.
 struct ErrorView: View {
-    private let error: any LocalizedError
+    private let error: DisplayError
+    private let isRetrying: Bool
     private let retry: () -> Void
 
     /// - Parameters:
-    ///   - error: Supplies the message through `localizedDescription`, which `LocalizedError` fills from
-    ///     `errorDescription`.
+    ///   - error: The failure as the user reads it: headline, message and symbol.
+    ///   - isRetrying: Whether a retry is in flight; the button is then disabled and shows a spinner.
     ///   - retry: Runs when the user taps Retry.
-    init(error: any LocalizedError, retry: @escaping () -> Void) {
+    init(error: DisplayError, isRetrying: Bool = false, retry: @escaping () -> Void) {
         self.error = error
+        self.isRetrying = isRetrying
         self.retry = retry
     }
 
@@ -20,23 +24,48 @@ struct ErrorView: View {
 
     var body: some View {
         ContentUnavailableView {
-            StateLabel(title: "Something went wrong", systemImage: "exclamationmark.triangle", tint: .red)
+            StateLabel(title: error.title, systemImage: error.systemImage, tint: .red)
         } description: {
-            Text(error.localizedDescription)
+            Text(error.message)
                 .textStyle(.body)
                 .foregroundStyle(.foregroundPrimary)
         } actions: {
-            Button("Retry", systemImage: "arrow.clockwise", action: retry)
-                .buttonStyle(.borderedProminent)
+            retryButton
         }
         .background(.backgroundSecondary)
+    }
+
+    // MARK: - Private helpers
+
+    private var retryButton: some View {
+        Button(action: retry) {
+            Label {
+                Text("Retry")
+            } icon: {
+                if isRetrying {
+                    ProgressView()
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                }
+            }
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(isRetrying)
     }
 }
 
 #Preview("Offline") {
-    ErrorView(error: PreviewError(message: "You appear to be offline. Check your connection and try again.")) {}
+    ErrorView(error: .offline) {}
 }
 
 #Preview("Server") {
-    ErrorView(error: PreviewError(message: "The server could not be reached (HTTP 503).")) {}
+    ErrorView(error: .serverUnavailable) {}
+}
+
+#Preview("Unreadable feed") {
+    ErrorView(error: .unreadableFeed) {}
+}
+
+#Preview("Retrying") {
+    ErrorView(error: .unreachable, isRetrying: true) {}
 }

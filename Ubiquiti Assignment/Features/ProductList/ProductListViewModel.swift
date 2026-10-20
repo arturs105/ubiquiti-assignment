@@ -7,9 +7,10 @@ import Foundation
 /// Inputs enter as subjects: the feed the repository streams, the filter (the selected category and the checked
 /// lines, one `ProductFilter` so a tab change is one send), whether a refresh is in flight, and how the last refresh
 /// ended. The lines the menu offers derive from feed and category, the filter the list applies is the input filter
-/// narrowed to those lines, the screen state is a `CombineLatest` over the feed, that filter and the two refresh
-/// inputs, and the stale error over two of them, so no intent method computes a state by hand; see the Concurrency
-/// and Combine section of `docs/CODING_STANDARDS.md`. `init` only wires the pipeline; `load()` starts the
+/// narrowed to those lines, the screen state is a `CombineLatest` over the feed, that filter and how the last
+/// refresh ended, and the stale error over the feed and that outcome, so no intent method computes a state by hand;
+/// see the Concurrency and Combine section of `docs/CODING_STANDARDS.md`. Whether a refresh is in flight feeds only
+/// `isRefreshing`, which the views read beside the state. `init` only wires the pipeline; `load()` starts the
 /// subscription and the first refresh. The rows' thumbnails are built here too, so the views never see the image
 /// loader.
 @Observable
@@ -25,10 +26,10 @@ final class ProductListViewModel {
     private(set) var availableLines: [Line] = []
     /// The feed on screen has no products at all, so an `empty` state is the catalogue's, not the tab's.
     private(set) var isCatalogueEmpty = false
-    /// Why the list on screen is stale: the refresh behind it failed. `nil` while the list has no rows, since the
-    /// failure is then the state itself.
-    private(set) var staleError: FeedError?
-    /// A refresh is in flight; the stale banner shows a spinner in place of Retry.
+    /// Why the list on screen is stale, as the user reads it: the refresh behind it failed. `nil` while the feed has
+    /// no rows, since the failure is then the state itself.
+    private(set) var staleError: DisplayError?
+    /// A refresh is in flight; the stale banner and the error view show a spinner in place of Retry.
     private(set) var isRefreshing = false
 
     private let repository: any FeedRepository
@@ -56,8 +57,18 @@ final class ProductListViewModel {
             .map { filter, lines in filter.keeping(lines.map(\.id)) }
             .removeDuplicates()
 
-        Publishers.CombineLatest4(feed, filter, refreshingSubject, refreshFailureSubject)
-            .map(Self.state)
+        // A refresh that succeeds with nothing on screen clears its failure before the stream task delivers the feed,
+        // in an order the scheduler picks; the failure is held until a feed is present, so the screen stays on the
+        // error view through that gap instead of flashing the loading view. The hold is a `scan` over the same tuple
+        // the state maps, not a publisher of its own beside it: a subject delivers to its subscribers in no fixed
+        // order, so a second subscription to the feed could clear the failure before the state saw the feed.
+        Publishers.CombineLatest3(feed, filter, refreshFailureSubject)
+            .scan((failure: FeedError?.none, state: LoadState<[Product]>.loading)) { last, input in
+                let (feed, filter, refreshFailure) = input
+                let failure = Self.failure(held: last.failure, feed: feed, refreshFailure: refreshFailure)
+                return (failure, Self.state(feed: feed, filter: filter, failure: failure))
+            }
+            .map(\.state)
             .removeDuplicates()
             .sink { [weak self] state in self?.state = state }
             .store(in: &cancellables)
@@ -83,7 +94,7 @@ final class ProductListViewModel {
             .store(in: &cancellables)
 
         Publishers.CombineLatest(feedSubject, refreshFailureSubject)
-            .map { feed, failure in (feed?.products.isEmpty ?? true) ? nil : failure }
+            .map { feed, failure in (feed?.products.isEmpty ?? true) ? nil : failure.map(DisplayError.init) }
             .removeDuplicates()
             .sink { [weak self] error in self?.staleError = error }
             .store(in: &cancellables)
@@ -181,7 +192,6 @@ final class ProductListViewModel {
     static func state(
         feed: Feed?,
         filter: ProductFilter,
-        isRefreshing: Bool,
         failure: FeedError?,
     ) -> LoadState<[Product]> {
         let catalogue = feed?.products ?? []
@@ -190,12 +200,21 @@ final class ProductListViewModel {
         // Rows exist, just none under this tab or these lines: the user widens the filter, and a failed refresh has
         // nothing to add.
         guard catalogue.isEmpty else { return .empty }
-        // No rows to keep on screen, cached or not: the failure is the state until a retry is under way, which
-        // reads as loading again. An empty list over a failed refresh would claim the catalogue is empty.
+        // No rows to keep on screen, cached or not: the failure is the state, through a retry too, so the error view
+        // shows the retry in place instead of giving way to the loading view and coming back on a second failure.
+        // An empty list over a failed refresh would claim the catalogue is empty.
         if let failure {
-            return isRefreshing ? .loading : .failed(failure)
+            return .failed(DisplayError(failure))
         }
         return feed == nil ? .loading : .empty
+    }
+
+    /// The failure the state reads: how the last refresh ended, except that a success over no feed keeps the
+    /// failure `held` until the feed it downloaded arrives through the stream. Internal, like `state`, so a test can
+    /// pin the order in which the two tasks deliver.
+    static func failure(held: FeedError?, feed: Feed?, refreshFailure: FeedError?) -> FeedError? {
+        guard refreshFailure == nil, feed == nil else { return refreshFailure }
+        return held
     }
 
     /// The menu's lines (`ProductFilter.menuLines`) that have a product under `category`, in the menu's order.

@@ -4,7 +4,8 @@ import Foundation
 ///
 /// The script is either an outcome every refresh ends in or, through `neverAnswering(cached:)`, a refresh that
 /// stays in flight until the task awaiting it is cancelled, for a loading preview and for asserting what shows
-/// before the server answers.
+/// before the server answers. `script(_:)` swaps the outcome between refreshes, so a test can fail one and let the
+/// retry after it succeed.
 ///
 /// An actor, like the production repository, because it keeps the same list of `feed()` subscribers: an updated
 /// refresh reaches them as it would in production, and `publish(_:)` lets a test push a feed nobody on screen asked
@@ -13,7 +14,7 @@ import Foundation
 actor InMemoryFeedRepository: FeedRepository {
     private var cached: Feed?
     /// How every refresh ends; `nil` when it never does.
-    private let result: Result<FeedRefresh, FeedError>?
+    private var result: Result<FeedRefresh, FeedError>?
     private var subscribers: [UUID: AsyncStream<Feed?>.Continuation] = [:]
     /// How many times `refresh()` has been called, so a test can tell a joined refresh from a second one.
     private(set) var refreshCount = 0
@@ -78,6 +79,11 @@ actor InMemoryFeedRepository: FeedRepository {
     }
 
     // MARK: - Test hooks
+
+    /// Makes every later refresh end in `result`; one already in flight keeps the outcome it started with.
+    func script(_ result: Result<FeedRefresh, FeedError>) {
+        self.result = result
+    }
 
     /// Hands `feed` to every subscriber as if a refresh elsewhere had just saved it, and keeps it as the cached feed.
     func publish(_ feed: Feed) {

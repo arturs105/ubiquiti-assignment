@@ -2,22 +2,20 @@ import SwiftUI
 
 /// Inline notice shown above a list that is rendering a cached snapshot because the refresh failed.
 ///
-/// Non-blocking by design: the cached content stays on screen and the banner carries the Retry instead.
+/// Non-blocking by design: the cached content stays on screen and the banner carries the Retry instead. The banner
+/// names the failure (its symbol and headline), so an offline refresh and a server error read differently.
 struct StaleDataBanner: View {
-    private let message: LocalizedStringResource
-    private let isLoading: Bool
-    private let retry: (() -> Void)?
+    private let error: DisplayError
+    private let isRetrying: Bool
+    private let retry: () -> Void
 
     /// - Parameters:
-    ///   - message: What is stale and why, in one line.
-    ///   - retry: Runs when the user taps Retry. Pass `nil` while a refresh is already in flight.
-    init(
-        message: LocalizedStringResource = "Showing saved products. Couldn’t refresh.",
-        isLoading: Bool = false,
-        retry: (() -> Void)? = nil,
-    ) {
-        self.message = message
-        self.isLoading = isLoading
+    ///   - error: Why the refresh failed, as the user reads it.
+    ///   - isRetrying: Whether a retry is in flight; a spinner then replaces Retry.
+    ///   - retry: Runs when the user taps Retry.
+    init(error: DisplayError, isRetrying: Bool = false, retry: @escaping () -> Void) {
+        self.error = error
+        self.isRetrying = isRetrying
         self.retry = retry
     }
 
@@ -35,10 +33,10 @@ struct StaleDataBanner: View {
 
     var label: some View {
         HStack(spacing: Spacing.small) {
-            Image(systemName: "wifi.slash")
+            Image(systemName: error.systemImage)
                 .foregroundStyle(.foregroundTertiary)
                 .accessibilityHidden(true)
-            Text(message)
+            Text("Showing saved products. \(Text(error.title))")
                 .textStyle(.caption)
                 .foregroundStyle(.foregroundSecondary)
         }
@@ -51,14 +49,14 @@ struct StaleDataBanner: View {
 
     @ViewBuilder
     var accessoryView: some View {
-        if isLoading {
+        if isRetrying {
             ProgressView()
-        } else if let retry {
-            retryButton(retry)
+        } else {
+            retryButton
         }
     }
 
-    func retryButton(_ retry: @escaping () -> Void) -> some View {
+    var retryButton: some View {
         Button(action: retry) {
             // The frame sits inside the label because a borderless button only takes taps on its label.
             Text("Retry")
@@ -70,14 +68,32 @@ struct StaleDataBanner: View {
     }
 }
 
-#Preview("With retry") {
-    StaleDataBanner {}
+#Preview("Offline") {
+    StaleDataBanner(error: .offline) {}
+        .padding(Spacing.large)
+        .background(.backgroundSecondary)
+}
+
+#Preview("Unreachable") {
+    StaleDataBanner(error: .unreachable) {}
+        .padding(Spacing.large)
+        .background(.backgroundSecondary)
+}
+
+#Preview("Server") {
+    StaleDataBanner(error: .serverUnavailable) {}
+        .padding(Spacing.large)
+        .background(.backgroundSecondary)
+}
+
+#Preview("Unreadable feed") {
+    StaleDataBanner(error: .unreadableFeed) {}
         .padding(Spacing.large)
         .background(.backgroundSecondary)
 }
 
 #Preview("Refreshing") {
-    StaleDataBanner(isLoading: true)
+    StaleDataBanner(error: .offline, isRetrying: true) {}
         .padding(Spacing.large)
         .background(.backgroundSecondary)
 }

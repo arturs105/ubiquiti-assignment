@@ -23,8 +23,8 @@ final class ProductImageViewModel {
     // MARK: - Intents
 
     /// Loads the image and returns once the slot has something to show. A loaded image is kept; a failed one is
-    /// asked for again, so a row that scrolls back after an offline failure retries. The view awaits this from its
-    /// `.task`, so a row leaving the screen cancels the load.
+    /// asked for again, so a row that scrolls back after an offline failure retries and the hero's Retry re-runs
+    /// it. The view awaits this from its `.task`, so a row leaving the screen cancels the load.
     func load() async {
         if case .loaded = state {
             return
@@ -32,10 +32,11 @@ final class ProductImageViewModel {
         state = .loading
         do throws(ImageError) {
             state = try await .loaded(loader.image(for: product, size: size))
-        } catch .cancelled {
-            // The row left the screen: nothing to show and nobody looking. A new load starts if it comes back.
         } catch {
-            state = .failed
+            // A cancelled load maps to nothing: the row left the screen, nothing to show and nobody looking. A new
+            // load starts if it comes back.
+            guard let failure = DisplayError(error) else { return }
+            state = .failed(failure)
         }
     }
 }

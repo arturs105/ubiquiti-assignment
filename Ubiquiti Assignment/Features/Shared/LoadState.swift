@@ -12,7 +12,7 @@ enum LoadState<Value: Equatable>: Equatable {
     case loaded(Value)
     /// The source answered with nothing to show.
     case empty
-    /// Nothing to show and the last attempt failed. Until #15 lands the error is the Core one; the view shows its
-    /// `localizedDescription`.
-    case failed(FeedError)
+    /// Nothing to show and the last attempt failed, already worded for the screen. The state stays `failed` while
+    /// a retry runs, so the error view shows the retry in place rather than giving way to the loading view.
+    case failed(DisplayError)
 }

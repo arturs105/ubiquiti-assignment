@@ -20,13 +20,13 @@ struct ProductImageViewModelTests {
         #expect(loader.requests == [InMemoryImageLoader.Request(productID: product.id, size: .thumbnail)])
     }
 
-    @Test func aFailureShowsTheFailureImage() async {
+    @Test func aFailureCarriesTheErrorAsTheUserReadsIt() async {
         let loader = InMemoryImageLoader(error: .network(.httpStatus(HTTPStatus.forbidden)))
         let viewModel = ProductImageViewModel(product: product, size: .thumbnail, loader: loader)
 
         await viewModel.load()
 
-        #expect(viewModel.state == .failed)
+        #expect(viewModel.state == .failed(.unavailableImage))
     }
 
     @Test func cancellingTheLoadKeepsThePlaceholder() async {

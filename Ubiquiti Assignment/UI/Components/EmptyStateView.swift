@@ -33,7 +33,7 @@ struct EmptyStateView: View {
 }
 
 #Preview("No products") {
-    EmptyStateView(title: "No products", message: "The product list is empty.")
+    EmptyStateView(title: "No products", message: "The product list is empty. Pull down to try again.")
 }
 
 #Preview("Nothing in category") {
